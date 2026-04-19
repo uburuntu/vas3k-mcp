@@ -96,6 +96,14 @@ app.get("/authorize", async (c) => {
     return c.text("Invalid request", 400);
   }
 
+  // PKCE is mandated by MCP 2025-06-18 §2.1.1 and OAuth 2.1. The library
+  // verifies code_challenge against code_verifier only when one was sent —
+  // reject outright if the client omitted it (defends against legacy
+  // PKCE-bypass downgrade where omission silently disables the check).
+  if (!oauthReqInfo.codeChallenge) {
+    return c.text("PKCE required (code_challenge with method=S256)", 400);
+  }
+
   const client = await c.env.OAUTH_PROVIDER.lookupClient(oauthReqInfo.clientId);
   const clientName = client?.clientName ?? oauthReqInfo.clientId;
   // The `client_id` is either an opaque registered id, or — with CIMD — a
@@ -135,7 +143,7 @@ form{margin-top:1.5rem}</style></head>
 <h1>Подключить «${escapeHtml(clientName)}» к Клубу?</h1>
 <p>Приложение запрашивает доступ к твоему профилю на <a href="https://vas3k.club">vas3k.club</a> через OAuth.</p>
 
-<div class="warn">⚠️ <strong>Имя приложения «${escapeHtml(clientName)}» оно само себе придумало.</strong> Если ты не запускал/-а это приложение специально — закрой эту вкладку. Проверь идентификатор и redirect URL ниже.</div>
+<div class="warn">⚠️ <strong>Имя «${escapeHtml(clientName)}» приложение указало само — никто его не проверял.</strong> Если ты сам это приложение не подключал — закрой вкладку. Проверь идентификатор и redirect URL ниже.</div>
 
 <div class="kv"><span class="kv-label">Client ID</span><code>${escapeHtml(clientIdentifier)}</code></div>
 <div class="kv"><span class="kv-label">Redirect URL</span><code>${escapeHtml(redirectUri)}</code></div>
@@ -249,7 +257,10 @@ app.get("/callback", async (c) => {
     // The MCP-side scopes the original `oauthReqInfo` requested. Echo back
     // exactly what the client asked for so /mcp-full's write tools can
     // gate on `props.mcpScopes.includes("write")`.
-    mcpScopes: oauthReqInfo.scope ?? ["read"],
+    // `parseAuthRequest` returns [] when the client omitted `scope=`. Default
+    // to the full set so write tools work; clients that explicitly want
+    // read-only can pass `scope=read` and the /mcp-full guard will hold.
+    mcpScopes: oauthReqInfo.scope.length ? oauthReqInfo.scope : ["read", "write"],
   };
 
   const { redirectTo } = await c.env.OAUTH_PROVIDER.completeAuthorization({

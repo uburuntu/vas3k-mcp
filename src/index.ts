@@ -93,7 +93,7 @@ export async function refreshUpstreamTokens(
 export default new OAuthProvider({
   // Two MCP endpoints sharing one OAuth registration:
   //   /mcp       — read-only (12 tools). Safe default for hosted use.
-  //   /mcp-full  — read + 12 write tools (votes, bookmarks, friends,
+  //   /mcp-full  — read + 11 write tools (votes, bookmarks, friends,
   //                room subscriptions, profile-tag toggles, etc).
   // Sibling paths (not nested) so OAuthProvider's prefix match can't
   // accidentally route /mcp-full requests through the /mcp handler.

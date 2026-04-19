@@ -53,11 +53,16 @@ jobs:
       - name: Open issue on failure
         if: steps.probe.outputs.ok == 'false'
         uses: actions/github-script@v7
+        env:
+          # Pass via env so backticks / ${...} in the probe body can't break
+          # out of the script's template literals (security review MED-1).
+          PROBE_STATUS: ${{ steps.probe.outputs.last_status }}
+          PROBE_BODY: ${{ steps.probe.outputs.body }}
         with:
           script: |
             const { repo, owner } = context.repo;
-            const status = `${{ steps.probe.outputs.last_status }}`;
-            const body = `${{ steps.probe.outputs.body }}`;
+            const status = process.env.PROBE_STATUS;
+            const body = process.env.PROBE_BODY;
             const title = `Uptime: vas3k-mcp.rmbk.me unreachable (HTTP ${status})`;
 
             // Only open one issue at a time — search for existing open

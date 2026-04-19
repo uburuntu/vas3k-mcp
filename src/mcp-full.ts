@@ -1,6 +1,6 @@
 /**
- * Read+write variant of the MCP server. Mounted at `/mcp/full`. Inherits the
- * 12 read tools from `MyMCP` and adds 12 write tools that mutate the user's
+ * Read+write variant of the MCP server. Mounted at `/mcp-full`. Inherits the
+ * 12 read tools from `MyMCP` and adds 11 write tools that mutate the user's
  * vas3k.club account.
  *
  * Why a separate class / endpoint instead of a global flag:
@@ -30,6 +30,21 @@ import { Vas3kAPIError } from "./vas3k-client";
 
 const COMMENT_ID = z.uuid().describe("Comment UUID (from list_post_comments)");
 const SLUG = z.string().describe("URL slug — letters, digits, _ or -");
+
+/** MCP annotations for write tools. None destructive (every action is
+ * reversible via its toggle/retract counterpart); openWorldHint:true since
+ * the call hits upstream vas3k.club. */
+const WRITE_ANNOTATIONS = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  openWorldHint: true,
+} as const;
+
+/** Idempotent variants — upvote/retract are setters, not toggles. */
+const WRITE_ANNOTATIONS_IDEMPOTENT = {
+  ...WRITE_ANNOTATIONS,
+  idempotentHint: true,
+} as const;
 
 export class MyMCPFull extends MyMCP {
   // Intentionally do NOT redeclare `server` — inherit the parent's instance
@@ -65,6 +80,7 @@ export class MyMCPFull extends MyMCP {
         description:
           "Toggle a bookmark on a post. Adding (or removing) a bookmark; same call performs both.",
         inputSchema: { post_slug: SLUG },
+        annotations: WRITE_ANNOTATIONS,
       },
       async ({ post_slug }) => this.wrap(() => this.writeClient().bookmarkPost(post_slug)),
     );
@@ -75,6 +91,7 @@ export class MyMCPFull extends MyMCP {
         description:
           "Upvote a post. Idempotent — calling twice does NOT downvote (use retract_post_vote for that).",
         inputSchema: { post_slug: SLUG },
+        annotations: WRITE_ANNOTATIONS_IDEMPOTENT,
       },
       async ({ post_slug }) => this.wrap(() => this.writeClient().upvotePost(post_slug)),
     );
@@ -84,6 +101,7 @@ export class MyMCPFull extends MyMCP {
       {
         description: "Retract a previously cast upvote on a post.",
         inputSchema: { post_slug: SLUG },
+        annotations: WRITE_ANNOTATIONS_IDEMPOTENT,
       },
       async ({ post_slug }) => this.wrap(() => this.writeClient().retractPostVote(post_slug)),
     );
@@ -93,6 +111,7 @@ export class MyMCPFull extends MyMCP {
       {
         description: "Subscribe to (or unsubscribe from) notifications for new comments on a post.",
         inputSchema: { post_slug: SLUG },
+        annotations: WRITE_ANNOTATIONS,
       },
       async ({ post_slug }) =>
         this.wrap(() => this.writeClient().togglePostSubscription(post_slug)),
@@ -104,6 +123,7 @@ export class MyMCPFull extends MyMCP {
         description:
           "For posts of type `event`: toggle whether the authenticated user is participating.",
         inputSchema: { post_slug: SLUG },
+        annotations: WRITE_ANNOTATIONS,
       },
       async ({ post_slug }) =>
         this.wrap(() => this.writeClient().toggleEventParticipation(post_slug)),
@@ -116,6 +136,7 @@ export class MyMCPFull extends MyMCP {
         description:
           "Upvote a comment by its UUID. Get the UUID from `list_post_comments`. Idempotent.",
         inputSchema: { comment_id: COMMENT_ID },
+        annotations: WRITE_ANNOTATIONS_IDEMPOTENT,
       },
       async ({ comment_id }) => this.wrap(() => this.writeClient().upvoteComment(comment_id)),
     );
@@ -125,6 +146,7 @@ export class MyMCPFull extends MyMCP {
       {
         description: "Retract a previously cast upvote on a comment.",
         inputSchema: { comment_id: COMMENT_ID },
+        annotations: WRITE_ANNOTATIONS_IDEMPOTENT,
       },
       async ({ comment_id }) => this.wrap(() => this.writeClient().retractCommentVote(comment_id)),
     );
@@ -136,6 +158,7 @@ export class MyMCPFull extends MyMCP {
         description:
           "Toggle friendship with another club member. Sends or revokes a friend request.",
         inputSchema: { user_slug: SLUG },
+        annotations: WRITE_ANNOTATIONS,
       },
       async ({ user_slug }) => this.wrap(() => this.writeClient().toggleFriend(user_slug)),
     );
@@ -150,6 +173,7 @@ export class MyMCPFull extends MyMCP {
       {
         description: "Toggle subscription to a room (e.g. `ai`, `apps`). Affects email digests.",
         inputSchema: { room_slug: SLUG },
+        annotations: WRITE_ANNOTATIONS,
       },
       async ({ room_slug }) => this.wrap(() => this.writeClient().subscribeRoom(room_slug)),
     );
@@ -159,6 +183,7 @@ export class MyMCPFull extends MyMCP {
       {
         description: "Toggle muting a room. Muted rooms don't appear in the main feed.",
         inputSchema: { room_slug: SLUG },
+        annotations: WRITE_ANNOTATIONS,
       },
       async ({ room_slug }) => this.wrap(() => this.writeClient().muteRoom(room_slug)),
     );
@@ -170,6 +195,7 @@ export class MyMCPFull extends MyMCP {
         description:
           "Toggle a topical tag on the authenticated user's profile (e.g. `python`, `rust`, `kyiv`).",
         inputSchema: { tag_code: SLUG },
+        annotations: WRITE_ANNOTATIONS,
       },
       async ({ tag_code }) => this.wrap(() => this.writeClient().toggleProfileTag(tag_code)),
     );

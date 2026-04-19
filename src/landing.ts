@@ -154,8 +154,9 @@ main {
 .hero-art img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   display: block;
+  border-radius: 22px;
   /* Soft yellow halo behind the image — picks up the badge accent */
   filter: drop-shadow(0 18px 32px rgba(255, 196, 85, 0.28));
 }
@@ -271,6 +272,23 @@ main {
   font-size: 18px;
   opacity: 0.92;
 }
+
+/* use-case examples — soft tinted blocks under "Что это и зачем" */
+.examples {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0;
+  display: grid;
+  gap: 10px;
+}
+.examples li {
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.examples li strong { color: var(--brighter-text-color); }
 
 /* tools grid */
 .tools {
@@ -443,6 +461,35 @@ main {
   .client-where { margin-left: 0; width: 100%; order: 3; }
 }
 
+/* "custom" client section — explanatory text alongside a sample screenshot */
+.custom-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: start;
+  margin-top: 4px;
+}
+@media (max-width: 720px) {
+  .custom-grid { grid-template-columns: 1fr; }
+}
+.custom-grid ul { margin: 8px 0 12px; padding-left: 1.2rem; }
+.custom-grid li { margin: 4px 0; }
+.custom-figure { margin: 0; text-align: center; }
+.custom-figure img {
+  max-width: 240px;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--hairline);
+  display: block;
+  margin: 0 auto;
+}
+.custom-figure figcaption {
+  font-size: 12px;
+  opacity: 0.65;
+  margin-top: 8px;
+}
+
 /* code block — mirrors base.css "pre > code" */
 pre {
   margin: 18px 0 8px;
@@ -530,7 +577,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
     <div class="hero-text">
       <span class="hero-tag">🤖 MCP × 🥑 Вастрик.Клуб</span>
       <h1>MCP-сервер<br />для Клуба</h1>
-      <p>Подключи Claude, Cursor и других AI-ассистентов к Клубу по OAuth — пусть читают посты, ищут людей и копаются в ленте, пока ты занят чем-то поинтереснее.</p>
+      <p>Подключи Claude, ChatGPT и других AI-ассистентов к Клубу по OAuth — пусть читают посты, ищут людей и копаются в ленте, пока ты варишь кофе.</p>
       <div class="hero-cta">
         <a href="#подключить" class="button">Как подключить →</a>
         <a href="https://github.com/uburuntu/vas3k-mcp" class="button button-ghost" target="_blank" rel="noopener">GitHub</a>
@@ -544,11 +591,15 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
   <section class="block" id="зачем">
     <h2>Что это и зачем 🤔</h2>
     <p class="lede">
-      <strong>MCP (Model Context Protocol)</strong> — стандарт от Anthropic, чтобы AI-ассистенты ходили в реальные сервисы по API, а не пересказывали обучающую выборку.
+      <strong>MCP</strong> — стандарт от Anthropic, чтобы AI-ассистенты ходили в живые API, а не выдумывали ответы. Этот сервер подключает Клуб как обычное OAuth-приложение со страницы <a href="https://vas3k.club/apps/" target="_blank" rel="noopener">/apps/</a>.
     </p>
-    <p>
-      Этот сервер подключает Клуб как обычное OAuth-приложение — то самое, что живёт на странице <a href="https://vas3k.club/apps/" target="_blank" rel="noopener">vas3k.club/apps/</a>. Авторизуешься один раз — и Claude может вытащить твою ленту, найти человека по тегу или взять markdown поста, чтобы пересказать, перевести или процитировать.
-    </p>
+    <p>На практике:</p>
+    <ul class="examples">
+      <li><strong>Дайджест за неделю.</strong> «Что я пропустил в Клубе за неделю?» — Claude тянет свежие посты из нужных лент, фильтрует по твоим тегам и собирает короткий пересказ.</li>
+      <li><strong>Перед встречей.</strong> «Кто такой @nickname?» — профиль, теги, ачивки и бейджи в одном ответе.</li>
+      <li><strong>Поиск своих.</strong> «Кто в Клубе пишет про Rust в проде?» — поиск по людям и тегам в один заход.</li>
+      <li><strong>Длинный тред.</strong> «Перескажи спор в комментах вот этого поста» — markdown поста плюс ветка обсуждения.</li>
+    </ul>
   </section>
 
   <section class="block" id="умеет">
@@ -562,7 +613,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🏷</span><span class="tool-name">get_user_tags</span><span class="tool-desc">Теги в профиле</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🏆</span><span class="tool-name">get_user_badges</span><span class="tool-desc">Бейджи от других</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🎖</span><span class="tool-name">get_user_achievements</span><span class="tool-desc">Ачивки за активность</span></div>
-      <div class="tool"><span class="tool-emoji" aria-hidden="true">📲</span><span class="tool-name">find_user_by_telegram</span><span class="tool-desc">Найти по числовому Telegram ID</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">📲</span><span class="tool-name">find_user_by_telegram</span><span class="tool-desc">Найти по Telegram ID</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">📝</span><span class="tool-name">get_post</span><span class="tool-desc">Пост по типу и slug</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">📄</span><span class="tool-name">get_post_markdown</span><span class="tool-desc">Markdown поста</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">💬</span><span class="tool-name">list_post_comments</span><span class="tool-desc">Комменты под постом</span></div>
@@ -571,8 +622,8 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🔖</span><span class="tool-name">search_tags</span><span class="tool-desc">Поиск тегов с фильтром группы</span></div>
     </div>
 
-    <h3 class="tool-group-title">С правом писать — ещё 11 <span class="tool-group-badge tool-group-badge-write">/mcp-full</span></h3>
-    <p class="tool-group-desc">Только на <code class="inline">/mcp-full</code>. Меняют состояние аккаунта — лайки, букмарки, подписки и т.п. AI делает это от твоего имени.</p>
+    <h3 class="tool-group-title">Действия от твоего имени — ещё 11 <span class="tool-group-badge tool-group-badge-write">/mcp-full</span></h3>
+    <p class="tool-group-desc">Только на <code class="inline">/mcp-full</code>. Лайки, букмарки, подписки и т.п. — AI ставит их от твоего имени, когда ты его об этом просишь.</p>
     <div class="tools">
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🔖</span><span class="tool-name">bookmark_post</span><span class="tool-desc">Добавить или убрать букмарк</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">👍</span><span class="tool-name">upvote_post</span><span class="tool-desc">Лайкнуть пост</span></div>
@@ -590,7 +641,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
 
   <section class="block" id="подключить">
     <h2>Как подключить 🔌</h2>
-    <p>Сервер отдаёт два эндпоинта — read-only и с правом писать. OAuth и логин общие, отличаются только тулзы:</p>
+    <p>Сервер отдаёт два эндпоинта — read-only и с действиями. OAuth и логин общие, отличаются только наборы инструментов:</p>
     <div class="endpoints">
       <div class="endpoint">
         <span class="endpoint-tag">Чтение</span>
@@ -608,11 +659,38 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
 
     <details class="client" open>
       <summary>
+        <span class="client-name">ChatGPT (Web)</span>
+        <span class="client-where">Settings → Apps → Advanced Settings → Developer mode → Create App</span>
+      </summary>
+      <div class="client-body">
+        <p>Включи <em>Developer mode</em> в настройках, нажми <em>Create App</em>, заполни форму:</p>
+        <ul>
+          <li><em>Name</em> — любое (например, <code class="inline">vas3k</code>).</li>
+          <li><em>MCP Server URL</em> — <code class="inline">https://vas3k-mcp.rmbk.me/mcp</code> (или <code class="inline">/mcp-full</code>).</li>
+          <li><em>Authentication</em> — OAuth.</li>
+        </ul>
+        <p>Поставь галочку «I understand and want to continue» — это стандартное предупреждение OpenAI про сторонние MCP-серверы.</p>
+      </div>
+    </details>
+
+    <details class="client">
+      <summary>
         <span class="client-name">Claude Desktop</span>
         <span class="client-where">Settings → Connectors → Add Custom Connector</span>
       </summary>
       <div class="client-body">
         <p>В поле <em>URL</em> вставить:</p>
+<pre><code>https://vas3k-mcp.rmbk.me/mcp</code></pre>
+      </div>
+    </details>
+
+    <details class="client">
+      <summary>
+        <span class="client-name">Perplexity (Web)</span>
+        <span class="client-where">Settings → Connectors → Add Connector</span>
+      </summary>
+      <div class="client-body">
+        <p>В поле <em>Server URL</em> — тот же URL, тип авторизации — OAuth:</p>
 <pre><code>https://vas3k-mcp.rmbk.me/mcp</code></pre>
       </div>
     </details>
@@ -645,44 +723,38 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
 
     <details class="client">
       <summary>
-        <span class="client-name">VS Code</span>
-        <span class="client-where"><code class="inline">.vscode/mcp.json</code></span>
-      </summary>
-      <div class="client-body">
-<pre><code>{
-  "servers": {
-    "vas3k": {
-      "type": "http",
-      "url": "https://vas3k-mcp.rmbk.me/mcp"
-    }
-  }
-}</code></pre>
-      </div>
-    </details>
-
-    <details class="client">
-      <summary>
-        <span class="client-name">ChatGPT</span>
-        <span class="client-where">Settings → Apps → Create App</span>
-      </summary>
-      <div class="client-body">
-        <p>В поле <em>MCP Server URL</em> вставить тот же URL, тип авторизации — OAuth:</p>
-<pre><code>https://vas3k-mcp.rmbk.me/mcp</code></pre>
-      </div>
-    </details>
-
-    <details class="client">
-      <summary>
         <span class="client-name">MCP Inspector</span>
-        <span class="client-where">Дебаг-клиент от Anthropic — удобно посмотреть на ручки руками</span>
+        <span class="client-where">Дебаг-клиент от Anthropic — для ручной отладки</span>
       </summary>
       <div class="client-body">
 <pre><code>npx @modelcontextprotocol/inspector</code></pre>
-        <p>В открывшемся UI: <em>Transport</em> = Streamable HTTP, <em>URL</em> = <code class="inline">https://vas3k-mcp.rmbk.me/mcp</code>.</p>
+        <p>В UI: <em>Transport</em> = Streamable HTTP, <em>URL</em> = <code class="inline">https://vas3k-mcp.rmbk.me/mcp</code>.</p>
       </div>
     </details>
 
-    <p class="code-caption">Не нашёл свой клиент? Большинство поддерживают тот же шаблон <code class="inline">{ "url": "..." }</code>. Список совместимости — в <a href="https://modelcontextprotocol.io/clients" target="_blank" rel="noopener">MCP-доках</a>.</p>
+    <details class="client">
+      <summary>
+        <span class="client-name">Любой другой клиент</span>
+        <span class="client-where">Ручная настройка MCP</span>
+      </summary>
+      <div class="client-body">
+        <div class="custom-grid">
+          <div>
+            <p>Большинство клиентов используют одни и те же поля. В форме «New connector» / «Add MCP server» нужно заполнить:</p>
+            <ul>
+              <li><em>Name</em> — любое имя (например, <code class="inline">vas3k</code>).</li>
+              <li><em>MCP Server URL</em> — <code class="inline">https://vas3k-mcp.rmbk.me/mcp</code> или <code class="inline">/mcp-full</code>.</li>
+              <li><em>Authentication</em> — OAuth. Остальное клиент подтянет сам из <code class="inline">/.well-known/oauth-authorization-server</code>.</li>
+            </ul>
+            <p>Если клиент предупреждает про «небезопасные сторонние MCP» — это стандартное предупреждение, можно соглашаться.</p>
+          </div>
+          <figure class="custom-figure">
+            <img src="/img/chatgpt-new-app.png" alt="Форма New App в ChatGPT" loading="lazy" />
+            <figcaption>Образец — форма из ChatGPT.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </details>
   </section>
 
   <div class="row">
@@ -692,7 +764,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
         <li>На <code class="inline">/mcp</code> — только чтение. На <code class="inline">/mcp-full</code> — то же самое плюс действия от твоего имени.</li>
         <li>OAuth ровно с теми же правами, что у любого приложения со страницы <a href="https://vas3k.club/apps/" target="_blank" rel="noopener">/apps/</a>.</li>
         <li>Доступ отзывается там же одной кнопкой.</li>
-        <li>Токены шифруются перед записью в Cloudflare KV (ключ — секрет инстанса), наружу не отдаются.</li>
+        <li>Токены шифруются ключом, который знает только этот сервер, перед записью в Cloudflare KV.</li>
         <li>Никакой телеметрии — данные едут только в твой AI-клиент.</li>
       </ul>
     </section>
@@ -711,7 +783,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
 </main>
 
 <footer>
-  Сделано с ❤️ для <a href="https://vas3k.club" target="_blank" rel="noopener">vas3k.club</a>
+  Неофициальный проект для <a href="https://vas3k.club" target="_blank" rel="noopener">vas3k.club</a>
   <span class="sep">∞</span>
   <a href="https://github.com/uburuntu/vas3k-mcp" target="_blank" rel="noopener">GitHub</a>
   <span class="sep">∞</span>

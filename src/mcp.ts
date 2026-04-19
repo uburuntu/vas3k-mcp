@@ -44,6 +44,10 @@ const TAG_GROUP = z
   .enum(["club", "tech", "hobbies", "personal", "collectible", "other"])
   .describe("Profile-tag group");
 
+/** MCP annotations for read tools that hit external upstream API. Lets hosts
+ * auto-allow without prompting (MCP review M2). */
+const READ_ANNOTATIONS = { readOnlyHint: true, openWorldHint: true } as const;
+
 /**
  * Strip any bearer-token-shaped or session-token-shaped substring from text
  * before sending it to the LLM. Defence against the rare case where vas3k.club
@@ -52,7 +56,8 @@ const TAG_GROUP = z
 function redactSecrets(s: string): string {
   return s
     .replace(/Bearer\s+\S+/gi, "Bearer [REDACTED]")
-    .replace(/\b(st|sa)_\S+/g, "$1_[REDACTED]");
+    .replace(/\b(st|sa)_[A-Za-z0-9_-]+/g, "$1_[REDACTED]")
+    .replace(/"(access_token|refresh_token|id_token)"\s*:\s*"[^"]+"/g, '"$1":"[REDACTED]"');
 }
 
 export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
@@ -89,7 +94,9 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
                 ? " (not found — check the slug)"
                 : err.status === 429
                   ? " (rate limited)"
-                  : "";
+                  : err.status >= 500
+                    ? " (upstream is having problems — retry later)"
+                    : "";
         const payload = redactSecrets(JSON.stringify(err.payload).slice(0, 500));
         return {
           isError: true,
@@ -108,7 +115,7 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
         content: [
           {
             type: "text" as const,
-            text: `Unexpected error (${e.name}): ${e.message}`,
+            text: `Unexpected error (${e.name}): ${redactSecrets(e.message)}`,
           },
         ],
       };
@@ -118,7 +125,11 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
   async init() {
     this.server.registerTool(
       "get_me",
-      { description: "Return the profile of the authenticated club member.", inputSchema: {} },
+      {
+        description: "Return the profile of the authenticated club member.",
+        inputSchema: {},
+        annotations: READ_ANNOTATIONS,
+      },
       async () => this.wrap(() => this.client().getMe()),
     );
 
@@ -127,6 +138,7 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
       {
         description: "Return a club member's profile by slug (the URL handle, e.g. 'vas3k').",
         inputSchema: { slug: z.string() },
+        annotations: READ_ANNOTATIONS,
       },
       async ({ slug }) => this.wrap(() => this.client().getUser(slug)),
     );
@@ -136,6 +148,7 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
       {
         description: "Return the topical tags a member has on their profile.",
         inputSchema: { slug: z.string() },
+        annotations: READ_ANNOTATIONS,
       },
       async ({ slug }) => this.wrap(() => this.client().getUserTags(slug)),
     );
@@ -145,6 +158,7 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
       {
         description: "Return the peer-awarded badges a member has received.",
         inputSchema: { slug: z.string() },
+        annotations: READ_ANNOTATIONS,
       },
       async ({ slug }) => this.wrap(() => this.client().getUserBadges(slug)),
     );
@@ -154,6 +168,7 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
       {
         description: "Return the achievements a member has earned.",
         inputSchema: { slug: z.string() },
+        annotations: READ_ANNOTATIONS,
       },
       async ({ slug }) => this.wrap(() => this.client().getUserAchievements(slug)),
     );
@@ -165,6 +180,7 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
         inputSchema: {
           telegram_id: z.union([z.string(), z.number().int()]).transform(String),
         },
+        annotations: READ_ANNOTATIONS,
       },
       async ({ telegram_id }) => this.wrap(() => this.client().findUserByTelegram(telegram_id)),
     );
@@ -174,6 +190,7 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
       {
         description: "Fetch a post by type and slug.",
         inputSchema: { post_type: POST_TYPE, slug: z.string() },
+        annotations: READ_ANNOTATIONS,
       },
       async ({ post_type, slug }) => this.wrap(() => this.client().getPost(post_type, slug)),
     );
@@ -183,6 +200,7 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
       {
         description: "Fetch the raw markdown body of a post.",
         inputSchema: { post_type: POST_TYPE, slug: z.string() },
+        annotations: READ_ANNOTATIONS,
       },
       async ({ post_type, slug }) =>
         this.wrap(() => this.client().getPostMarkdown(post_type, slug)),
@@ -193,6 +211,7 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
       {
         description: "List the visible comments under a post.",
         inputSchema: { post_type: POST_TYPE, slug: z.string() },
+        annotations: READ_ANNOTATIONS,
       },
       async ({ post_type, slug }) =>
         this.wrap(() => this.client().listPostComments(post_type, slug)),
@@ -207,6 +226,7 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
           ordering: ORDERING.default("activity"),
           page: z.number().int().min(1).default(1),
         },
+        annotations: READ_ANNOTATIONS,
       },
       async ({ post_type, ordering, page }) =>
         this.wrap(() => this.client().getFeed({ post_type, ordering, page })),
@@ -217,6 +237,7 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
       {
         description: "Find members whose slug starts with the given prefix (3–15 chars).",
         inputSchema: { prefix: z.string().min(3).max(15) },
+        annotations: READ_ANNOTATIONS,
       },
       async ({ prefix }) => this.wrap(() => this.client().searchUsers(prefix)),
     );
@@ -229,6 +250,7 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
           prefix: z.string().min(3).max(15).optional(),
           group: TAG_GROUP.optional(),
         },
+        annotations: READ_ANNOTATIONS,
       },
       async ({ prefix, group }) => this.wrap(() => this.client().searchTags({ prefix, group })),
     );
