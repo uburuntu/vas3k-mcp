@@ -660,22 +660,75 @@ main {
 .connection-builder .write-toggle-input:checked ~ .builder .read-snippet { display: none; }
 .connection-builder .write-toggle-input:checked ~ .builder .write-snippet { display: block; }
 
-/* Agent hint at the end of "Как подключить" — points at /install.md.
-   Yellow-tinted callout (vs the muted gray of the client list above)
-   so it reads as a distinct aside, not a continuation. */
+/* Agent hint — lives OUTSIDE the "Как подключить" .block so the section
+   boundary itself does the visual separation (no margin-top hacks). */
 .agent-hint {
-  margin-top: 64px;
+  margin: 0 0 30px;
   padding: 18px 22px;
   background: var(--accent-soft);
   border: 1px solid var(--accent-strong);
-  border-radius: 12px;
+  border-radius: var(--block-border-radius);
   font-size: 14px;
-}
-@media (prefers-color-scheme: dark) {
-  .agent-hint { background: rgba(255, 255, 255, 0.04); }
 }
 .agent-hint strong { color: var(--brighter-text-color); }
 .agent-hint a { font-family: var(--mono-font); }
+
+/* One-click copy — applied to <pre> snippets and the inline install
+   command in the agent hint. Clicking anywhere on the element copies
+   its text; "Скопировано" badge slides in for 1.5s. Click handler is
+   at the bottom of <body>. */
+.copyable {
+  cursor: pointer;
+  position: relative;
+}
+pre.copyable:hover code {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: -2px;
+  border-radius: 12px;
+}
+span.copyable {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1px 5px;
+  border-radius: 4px;
+  border-bottom: 1px dotted currentColor;
+  font-family: var(--mono-font);
+  font-size: 0.92em;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+@media (prefers-color-scheme: dark) {
+  span.copyable { background: rgba(255, 255, 255, 0.08); }
+}
+span.copyable:hover {
+  background: rgba(255, 196, 85, 0.28);
+  border-bottom-style: solid;
+  border-bottom-color: var(--accent-strong);
+}
+.copyable::after {
+  content: "Скопировано";
+  position: absolute;
+  top: -22px;
+  right: 0;
+  background: var(--accent-strong);
+  color: #1B1B1C;
+  font-family: var(--sans-font);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(2px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  white-space: nowrap;
+}
+.copyable.copied::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+pre.copyable::after {
+  top: 8px;
+  right: 10px;
+}
 
 /* code block — mirrors base.css "pre > code" */
 pre {
@@ -826,8 +879,8 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
         </summary>
         <div class="client-body">
           <p>В поле <em>URL</em> вставить:</p>
-<pre class="snippet read-snippet"><code>https://vas3k-mcp.rmbk.me/mcp</code></pre>
-<pre class="snippet write-snippet"><code>https://vas3k-mcp.rmbk.me/mcp-full</code></pre>
+<pre class="snippet read-snippet copyable"><code>https://vas3k-mcp.rmbk.me/mcp</code></pre>
+<pre class="snippet write-snippet copyable"><code>https://vas3k-mcp.rmbk.me/mcp-full</code></pre>
         </div>
       </details>
 
@@ -838,8 +891,8 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
         </summary>
         <div class="client-body">
           <p>В поле <em>Server URL</em> — адрес ниже, тип авторизации — OAuth:</p>
-<pre class="snippet read-snippet"><code>https://vas3k-mcp.rmbk.me/mcp</code></pre>
-<pre class="snippet write-snippet"><code>https://vas3k-mcp.rmbk.me/mcp-full</code></pre>
+<pre class="snippet read-snippet copyable"><code>https://vas3k-mcp.rmbk.me/mcp</code></pre>
+<pre class="snippet write-snippet copyable"><code>https://vas3k-mcp.rmbk.me/mcp-full</code></pre>
         </div>
       </details>
 
@@ -849,8 +902,8 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
           <span class="client-where">Команда в терминале</span>
         </summary>
         <div class="client-body">
-<pre class="snippet read-snippet"><code>claude mcp add --transport http vas3k https://vas3k-mcp.rmbk.me/mcp</code></pre>
-<pre class="snippet write-snippet"><code>claude mcp add --transport http vas3k https://vas3k-mcp.rmbk.me/mcp-full</code></pre>
+<pre class="snippet read-snippet copyable"><code>claude mcp add --transport http vas3k https://vas3k-mcp.rmbk.me/mcp</code></pre>
+<pre class="snippet write-snippet copyable"><code>claude mcp add --transport http vas3k https://vas3k-mcp.rmbk.me/mcp-full</code></pre>
         </div>
       </details>
 
@@ -860,14 +913,14 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
           <span class="client-where"><code class="inline">~/.cursor/mcp.json</code></span>
         </summary>
         <div class="client-body">
-<pre class="snippet read-snippet"><code>{
+<pre class="snippet read-snippet copyable"><code>{
   "mcpServers": {
     "vas3k": {
       "url": "https://vas3k-mcp.rmbk.me/mcp"
     }
   }
 }</code></pre>
-<pre class="snippet write-snippet"><code>{
+<pre class="snippet write-snippet copyable"><code>{
   "mcpServers": {
     "vas3k": {
       "url": "https://vas3k-mcp.rmbk.me/mcp-full"
@@ -883,7 +936,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
           <span class="client-where">Отладочный клиент от Anthropic</span>
         </summary>
         <div class="client-body">
-<pre><code>npx @modelcontextprotocol/inspector</code></pre>
+<pre class="copyable"><code>npx @modelcontextprotocol/inspector</code></pre>
           <p>В UI: <em>Transport</em> = Streamable HTTP, <em>URL</em> — <code class="inline read-url">https://vas3k-mcp.rmbk.me/mcp</code><code class="inline write-url">https://vas3k-mcp.rmbk.me/mcp-full</code></p>
         </div>
       </details>
@@ -913,10 +966,11 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
       </details>
     </div>
 
-    <p class="agent-hint">
-      🤖 <strong>AI-агент?</strong> Открой <a href="/install.md">/install.md</a> — те же инструкции в Markdown, для агента. Или скажи своему агенту: «open https://vas3k-mcp.rmbk.me/install.md and install it for me».
-    </p>
   </section>
+
+  <p class="agent-hint">
+    🤖 <strong>AI-агент?</strong> Открой <a href="/install.md">/install.md</a> — те же инструкции в Markdown, для агента. Или скажи своему агенту: «<span class="copyable">open https://vas3k-mcp.rmbk.me/install.md and install it for me</span>».
+  </p>
 
   <section class="block" id="умеет">
     <h2>Что умеет 🛠</h2>
@@ -1033,6 +1087,30 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
         { once: true },
       );
     }
+  });
+})();
+
+// One-click copy for .copyable elements. <pre>: grab inner <code> text.
+// Inline span: grab innerText. Briefly add .copied for the CSS badge.
+(() => {
+  document.querySelectorAll('.copyable').forEach((el) => {
+    el.addEventListener('click', async () => {
+      const target = el.tagName === 'PRE' ? el.querySelector('code') : el;
+      const text = ((target || el).innerText || '').trim();
+      try {
+        await navigator.clipboard.writeText(text);
+        el.classList.add('copied');
+        setTimeout(() => el.classList.remove('copied'), 1500);
+      } catch {
+        // Clipboard blocked (insecure context). Select instead so the user
+        // can ⌘C manually.
+        const range = document.createRange();
+        range.selectNodeContents(target || el);
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+    });
   });
 })();
 </script>
