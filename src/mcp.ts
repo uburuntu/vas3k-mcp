@@ -8,6 +8,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { McpAgent } from "agents/mcp";
 import { z } from "zod";
 
+import { MCP_SERVER_NAME, MCP_SERVER_VERSION } from "./constants";
 import type { Env, Props } from "./types";
 import { Vas3kAPIError, Vas3kClient } from "./vas3k-client";
 
@@ -55,7 +56,7 @@ function redactSecrets(s: string): string {
 }
 
 export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
-  server = new McpServer({ name: "vas3k-club", version: "0.1.0" });
+  server = new McpServer({ name: MCP_SERVER_NAME, version: MCP_SERVER_VERSION });
 
   protected client(): Vas3kClient {
     // OAuthProvider should populate `props` for any request that reaches an

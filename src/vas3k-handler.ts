@@ -13,10 +13,7 @@ import { Hono } from "hono";
 import { landingHtml } from "./landing";
 import type { Env, Props } from "./types";
 
-const STATE_TTL_SECONDS = 600;
-const SCOPE = "openid contact";
-/** Hard request timeout for upstream OAuth calls during the /callback flow. */
-const UPSTREAM_TIMEOUT_MS = 15_000;
+import { STATE_TTL_SECONDS, UPSTREAM_SCOPE as SCOPE, UPSTREAM_TIMEOUT_MS } from "./constants";
 
 // ---------- HMAC-signed state ------------------------------------------------
 // Replaces KV-stored state — eliminates the regional-eventual-consistency

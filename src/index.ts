@@ -18,19 +18,16 @@
 import { env } from "cloudflare:workers";
 import { OAuthProvider } from "@cloudflare/workers-oauth-provider";
 
+import {
+  CURRENT_PROPS_VERSION,
+  DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
+  MAX_ACCESS_TOKEN_TTL_SECONDS,
+  UPSTREAM_TIMEOUT_MS,
+} from "./constants";
 import { MyMCP } from "./mcp";
 import { MyMCPFull } from "./mcp-full";
 import type { Env, Props } from "./types";
 import { Vas3kHandler } from "./vas3k-handler";
-
-/** Default TTL when upstream omits `expires_in`. */
-const DEFAULT_ACCESS_TOKEN_TTL_SECONDS = 3600;
-/** Hard cap on accepted upstream `expires_in` to avoid surprise huge values. */
-const MAX_ACCESS_TOKEN_TTL_SECONDS = 24 * 3600;
-/** Hard request timeout for the upstream refresh call. */
-const UPSTREAM_REFRESH_TIMEOUT_MS = 15_000;
-/** Bump when `Props` shape changes; old tokens then refuse refresh. */
-export const CURRENT_PROPS_VERSION = 1;
 
 /**
  * Exchange an upstream refresh token for a fresh access token at vas3k.club.
@@ -58,7 +55,7 @@ export async function refreshUpstreamTokens(
       grant_type: "refresh_token",
       refresh_token: refreshToken,
     }).toString(),
-    signal: AbortSignal.timeout(UPSTREAM_REFRESH_TIMEOUT_MS),
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
   });
   if (!response.ok) {
     const body = await response.text();

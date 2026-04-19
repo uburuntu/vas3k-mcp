@@ -27,8 +27,7 @@ export interface Vas3kClientOptions {
   serviceToken?: string;
 }
 
-/** Hard request timeout (ms) for any single upstream call. */
-const REQUEST_TIMEOUT_MS = 15_000;
+import { UPSTREAM_TIMEOUT_MS } from "./constants";
 
 const SLUG_RE = /^[a-zA-Z0-9_-]{1,64}$/;
 const TELEGRAM_ID_RE = /^\d+$/;
@@ -84,7 +83,7 @@ export class Vas3kClient {
       // (reference/posts/api.py:19-22). Treat 3xx as an error rather than
       // following the redirect into an HTML page.
       redirect: "manual",
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
 
     if (response.status >= 300 && response.status < 400) {
@@ -162,8 +161,18 @@ export class Vas3kClient {
         : `/${post_type}/${ordering}/feed.json`;
     return this.request<unknown>(path, { params: { page } });
   };
-  searchUsers = (prefix: string) =>
-    this.request<unknown>("/search/users.json", { params: { prefix } });
+  searchUsers = (prefix: string) => {
+    // Mirror upstream's silent-empty rule (reference/search/api.py:18-21):
+    // [3..15] chars or you get nothing back. Surface as a 400 here so the
+    // failure is visible instead of an empty {users: []}.
+    if (prefix.length < 3 || prefix.length > 15) {
+      throw new Vas3kAPIError(400, {
+        error: "invalid_prefix",
+        error_description: "prefix must be 3-15 characters",
+      });
+    }
+    return this.request<unknown>("/search/users.json", { params: { prefix } });
+  };
   searchTags = (params: { prefix?: string; group?: string } = {}) =>
     this.request<unknown>("/search/tags.json", { params });
 

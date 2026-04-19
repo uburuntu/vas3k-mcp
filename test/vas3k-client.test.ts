@@ -2,6 +2,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Vas3kAPIError, Vas3kClient } from "../src/vas3k-client";
 
+function htmlResponse(body: string, status = 200) {
+  return new Response(body, {
+    status,
+    headers: { "content-type": "text/html; charset=utf-8" },
+  });
+}
+
+function redirectResponse(location: string, status = 302) {
+  return new Response("", {
+    status,
+    headers: { location },
+  });
+}
+
 const BASE = "https://example.invalid";
 
 function jsonResponse(body: unknown, init: ResponseInit = {}) {
@@ -151,5 +165,60 @@ describe("Vas3kClient", () => {
 
     // No upstream call should have been made for invalid slugs.
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("searchTags({}) sends no query string at all", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ tags: [] }));
+    const client = new Vas3kClient({ baseUrl: BASE, accessToken: "t" });
+    await client.searchTags({});
+    const url = fetchMock.mock.calls[0]?.[0] as string;
+    expect(url).toBe(`${BASE}/search/tags.json`);
+  });
+
+  it("searchUsers rejects prefixes outside [3..15] before fetching", async () => {
+    const client = new Vas3kClient({ baseUrl: BASE, accessToken: "t" });
+    await expect(async () => client.searchUsers("ab")).rejects.toBeInstanceOf(Vas3kAPIError);
+    await expect(async () => client.searchUsers("x".repeat(16))).rejects.toBeInstanceOf(
+      Vas3kAPIError,
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("treats a 302 redirect as Vas3kAPIError instead of following into HTML", async () => {
+    fetchMock.mockResolvedValueOnce(redirectResponse("/post/canonical-slug/", 302));
+    const client = new Vas3kClient({ baseUrl: BASE, accessToken: "t" });
+    await expect(client.getPost("link", "wrong-type-slug")).rejects.toBeInstanceOf(Vas3kAPIError);
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(init.redirect).toBe("manual");
+  });
+
+  it("rejects HTML responses on JSON-typed call sites", async () => {
+    fetchMock.mockResolvedValueOnce(htmlResponse("<!doctype html><body>Cloudflare WAF</body>"));
+    const client = new Vas3kClient({ baseUrl: BASE, accessToken: "t" });
+    await expect(client.getUser("vas3k")).rejects.toBeInstanceOf(Vas3kAPIError);
+  });
+
+  it("uses X-Service-Token header when serviceToken is set without accessToken", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ user: { slug: "vas3k" } }));
+    const client = new Vas3kClient({ baseUrl: BASE, serviceToken: "st_test" });
+    await client.getMe();
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const headers = init.headers as Record<string, string>;
+    expect(headers["X-Service-Token"]).toBe("st_test");
+    expect(headers.Authorization).toBeUndefined();
+  });
+
+  it("prefers Bearer token over service token when both are set", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ user: { slug: "vas3k" } }));
+    const client = new Vas3kClient({
+      baseUrl: BASE,
+      accessToken: "bear",
+      serviceToken: "st_should_be_ignored",
+    });
+    await client.getMe();
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const headers = init.headers as Record<string, string>;
+    expect(headers.Authorization).toBe("Bearer bear");
+    expect(headers["X-Service-Token"]).toBeUndefined();
   });
 });
