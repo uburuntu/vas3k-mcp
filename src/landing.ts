@@ -158,10 +158,13 @@ main {
   object-fit: cover;
   display: block;
 
-  /* Apple-icon-style squircle (figma-squircle superellipse, ~22.5 corner)
-     applied as an SVG mask so the silhouette is a true superellipse, not
-     just a high-radius rounded rect. */
-  --squircle: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path fill='black' d='M0,50 C0,24 0,12 7.5,7.5 C12,0 24,0 50,0 C76,0 88,0 92.5,7.5 C100,12 100,24 100,50 C100,76 100,88 92.5,92.5 C88,100 76,100 50,100 C24,100 12,100 7.5,92.5 C0,88 0,76 0,50 Z'/></svg>");
+  /* Apple-icon-style squircle: 4-cubic Bezier supercircle, one cubic per
+     quadrant so there are no curve joins (and therefore no tangent
+     mismatches → no corner bulges). Control points sit at 17.86 instead
+     of the 27.6 that would draw a true quarter circle, which flattens the
+     sides into the squircle silhouette. SVG mask ensures the drop-shadow
+     halo follows the squircle outline rather than a bounding rect. */
+  --squircle: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path fill='black' d='M0,50 C0,17.86 17.86,0 50,0 C82.14,0 100,17.86 100,50 C100,82.14 82.14,100 50,100 C17.86,100 0,82.14 0,50 Z'/></svg>");
   -webkit-mask-image: var(--squircle);
           mask-image: var(--squircle);
   -webkit-mask-size: 100% 100%;
@@ -538,6 +541,126 @@ main {
   margin-top: 8px;
 }
 
+/* Connection builder — checkbox toggle that swaps every /mcp ↔ /mcp-full
+   inside the section via :checked + ~ sibling selectors. Pure CSS, no JS. */
+.write-toggle-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.write-toggle {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  margin: 18px 0 22px;
+  background: var(--accent-soft);
+  border: 2px solid transparent;
+  border-radius: 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.write-toggle:hover { border-color: rgba(247, 183, 51, 0.5); }
+.write-toggle-input:focus-visible + .write-toggle {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+.write-toggle-input:checked + .write-toggle {
+  background: rgba(255, 196, 85, 0.32);
+  border-color: var(--accent-strong);
+}
+@media (prefers-color-scheme: dark) {
+  .write-toggle-input:checked + .write-toggle { background: rgba(255, 196, 85, 0.18); }
+}
+.write-toggle-track {
+  width: 42px; height: 24px;
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 999px;
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.25s ease;
+}
+.write-toggle-knob {
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 20px; height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.write-toggle-input:checked + .write-toggle .write-toggle-track { background: #1B1B1C; }
+.write-toggle-input:checked + .write-toggle .write-toggle-knob { transform: translateX(18px); }
+.write-toggle-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.write-toggle-text strong {
+  color: var(--brighter-text-color);
+  font-size: 15px;
+  font-weight: 600;
+}
+.write-toggle-sub {
+  font-size: 13px;
+  opacity: 0.72;
+}
+.write-toggle-badge {
+  font-family: var(--mono-font);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--brighter-text-color);
+  flex-shrink: 0;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.write-toggle-input:checked + .write-toggle .write-toggle-badge {
+  background: var(--accent-strong);
+  color: #1B1B1C;
+}
+@media (prefers-color-scheme: dark) {
+  .write-toggle-badge { background: rgba(255, 255, 255, 0.1); }
+}
+@media (max-width: 570px) {
+  .write-toggle { flex-wrap: wrap; }
+  .write-toggle-text { order: 3; flex-basis: 100%; }
+}
+
+/* Default: read variants visible, write hidden. Swap on :checked. */
+.connection-builder .write-url,
+.connection-builder .write-snippet { display: none; }
+.connection-builder .read-url { display: inline; }
+.connection-builder .read-snippet { display: block; }
+.connection-builder .write-toggle-input:checked ~ .write-toggle .read-url,
+.connection-builder .write-toggle-input:checked ~ .builder .read-url { display: none; }
+.connection-builder .write-toggle-input:checked ~ .write-toggle .write-url,
+.connection-builder .write-toggle-input:checked ~ .builder .write-url { display: inline; }
+.connection-builder .write-toggle-input:checked ~ .builder .read-snippet { display: none; }
+.connection-builder .write-toggle-input:checked ~ .builder .write-snippet { display: block; }
+
+/* Agent hint at the end of "Как подключить" — points at /install.md. */
+.agent-hint {
+  margin-top: 28px;
+  padding: 14px 18px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px dashed var(--hairline);
+  border-radius: 12px;
+  font-size: 14px;
+  opacity: 0.85;
+}
+@media (prefers-color-scheme: dark) {
+  .agent-hint { background: rgba(255, 255, 255, 0.04); }
+}
+.agent-hint strong { color: var(--brighter-text-color); }
+.agent-hint a { font-family: var(--mono-font); }
+
 /* code block — mirrors base.css "pre > code" */
 pre {
   margin: 18px 0 8px;
@@ -639,15 +762,144 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
   <section class="block" id="зачем">
     <h2>Что это и зачем 🤔</h2>
     <p class="lede">
-      <strong>MCP</strong> — стандарт от Anthropic, чтобы AI-ассистенты ходили в живые API, а не выдумывали ответы. Этот сервер подключает Клуб как обычное OAuth-приложение со страницы <a href="https://vas3k.club/apps/" target="_blank" rel="noopener">/apps/</a>.
+      <strong>MCP</strong> — стандарт, чтобы AI-ассистенты ходили в живые API, а не выдумывали ответы. Этот сервер подключает Клуб как обычное OAuth-приложение со страницы <a href="https://vas3k.club/apps/" target="_blank" rel="noopener">/apps/</a>.
     </p>
     <p>На практике:</p>
     <ul class="examples">
       <li><strong>Дайджест за неделю.</strong> «Что я пропустил в Клубе за неделю?» — Claude тянет свежие посты из нужных лент, фильтрует по твоим тегам и собирает короткий пересказ.</li>
-      <li><strong>Перед встречей.</strong> «Кто такой @nickname?» — профиль, теги, ачивки и бейджи в одном ответе.</li>
       <li><strong>Поиск своих.</strong> «Кто в Клубе пишет про Rust в проде?» — поиск по людям и тегам в один заход.</li>
       <li><strong>Длинный тред.</strong> «Перескажи спор в комментах вот этого поста» — markdown поста плюс ветка обсуждения.</li>
     </ul>
+  </section>
+
+  <section class="block connection-builder" id="подключить">
+    <h2>Как подключить 🔌</h2>
+    <p>Один URL, любой MCP-клиент. Включи переключатель ниже, если хочешь, чтобы AI мог ставить лайки, букмарки и подписки от твоего имени — все сниппеты под ним сразу обновятся.</p>
+
+    <input type="checkbox" id="write-toggle" class="write-toggle-input" />
+    <label for="write-toggle" class="write-toggle">
+      <span class="write-toggle-track"><span class="write-toggle-knob"></span></span>
+      <span class="write-toggle-text">
+        <strong>Разрешить действия от моего имени</strong>
+        <span class="write-toggle-sub">лайки, букмарки, подписки, друзья, теги</span>
+      </span>
+      <span class="write-toggle-badge"><span class="read-url">/mcp</span><span class="write-url">/mcp-full</span></span>
+    </label>
+
+    <div class="builder">
+      <details class="client" open>
+        <summary>
+          <span class="client-name">ChatGPT (Web)</span>
+          <span class="client-where">Settings → Apps → Advanced Settings → Developer mode → Create App</span>
+        </summary>
+        <div class="client-body">
+          <p>Включи <em>Developer mode</em> в настройках, нажми <em>Create App</em>, заполни форму:</p>
+          <ul>
+            <li><em>Name</em> — любое (например, <code class="inline">vas3k</code>).</li>
+            <li><em>MCP Server URL</em> — <code class="inline read-url">https://vas3k-mcp.rmbk.me/mcp</code><code class="inline write-url">https://vas3k-mcp.rmbk.me/mcp-full</code></li>
+            <li><em>Authentication</em> — OAuth.</li>
+          </ul>
+          <p>Поставь галочку «I understand and want to continue» — это стандартное предупреждение OpenAI про сторонние MCP-серверы.</p>
+        </div>
+      </details>
+
+      <details class="client">
+        <summary>
+          <span class="client-name">Claude Desktop</span>
+          <span class="client-where">Settings → Connectors → Add Custom Connector</span>
+        </summary>
+        <div class="client-body">
+          <p>В поле <em>URL</em> вставить:</p>
+<pre class="snippet read-snippet"><code>https://vas3k-mcp.rmbk.me/mcp</code></pre>
+<pre class="snippet write-snippet"><code>https://vas3k-mcp.rmbk.me/mcp-full</code></pre>
+        </div>
+      </details>
+
+      <details class="client">
+        <summary>
+          <span class="client-name">Perplexity (Web)</span>
+          <span class="client-where">Settings → Connectors → Add Connector</span>
+        </summary>
+        <div class="client-body">
+          <p>В поле <em>Server URL</em> — этот URL, тип авторизации — OAuth:</p>
+<pre class="snippet read-snippet"><code>https://vas3k-mcp.rmbk.me/mcp</code></pre>
+<pre class="snippet write-snippet"><code>https://vas3k-mcp.rmbk.me/mcp-full</code></pre>
+        </div>
+      </details>
+
+      <details class="client">
+        <summary>
+          <span class="client-name">Claude Code</span>
+          <span class="client-where">Команда в терминале</span>
+        </summary>
+        <div class="client-body">
+<pre class="snippet read-snippet"><code>claude mcp add --transport http vas3k https://vas3k-mcp.rmbk.me/mcp</code></pre>
+<pre class="snippet write-snippet"><code>claude mcp add --transport http vas3k https://vas3k-mcp.rmbk.me/mcp-full</code></pre>
+        </div>
+      </details>
+
+      <details class="client">
+        <summary>
+          <span class="client-name">Cursor</span>
+          <span class="client-where"><code class="inline">~/.cursor/mcp.json</code></span>
+        </summary>
+        <div class="client-body">
+<pre class="snippet read-snippet"><code>{
+  "mcpServers": {
+    "vas3k": {
+      "url": "https://vas3k-mcp.rmbk.me/mcp"
+    }
+  }
+}</code></pre>
+<pre class="snippet write-snippet"><code>{
+  "mcpServers": {
+    "vas3k": {
+      "url": "https://vas3k-mcp.rmbk.me/mcp-full"
+    }
+  }
+}</code></pre>
+        </div>
+      </details>
+
+      <details class="client">
+        <summary>
+          <span class="client-name">MCP Inspector</span>
+          <span class="client-where">Дебаг-клиент от Anthropic — для ручной отладки</span>
+        </summary>
+        <div class="client-body">
+<pre><code>npx @modelcontextprotocol/inspector</code></pre>
+          <p>В UI: <em>Transport</em> = Streamable HTTP, <em>URL</em> — <code class="inline read-url">https://vas3k-mcp.rmbk.me/mcp</code><code class="inline write-url">https://vas3k-mcp.rmbk.me/mcp-full</code></p>
+        </div>
+      </details>
+
+      <details class="client">
+        <summary>
+          <span class="client-name">Любой другой клиент</span>
+          <span class="client-where">Ручная настройка MCP</span>
+        </summary>
+        <div class="client-body">
+          <div class="custom-grid">
+            <div>
+              <p>Большинство клиентов используют одни и те же поля. В форме «New connector» / «Add MCP server» нужно заполнить:</p>
+              <ul>
+                <li><em>Name</em> — любое имя (например, <code class="inline">vas3k</code>).</li>
+                <li><em>MCP Server URL</em> — <code class="inline read-url">https://vas3k-mcp.rmbk.me/mcp</code><code class="inline write-url">https://vas3k-mcp.rmbk.me/mcp-full</code></li>
+                <li><em>Authentication</em> — OAuth. Остальное клиент подтянет сам из <code class="inline">/.well-known/oauth-authorization-server</code>.</li>
+              </ul>
+              <p>Если клиент предупреждает про «небезопасные сторонние MCP» — это стандартное предупреждение, можно соглашаться.</p>
+            </div>
+            <figure class="custom-figure">
+              <img src="/img/chatgpt-new-app.png" alt="Форма New App в ChatGPT" loading="lazy" />
+              <figcaption>Образец — форма из ChatGPT.</figcaption>
+            </figure>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <p class="agent-hint">
+      🤖 <strong>AI-агент?</strong> Открой <a href="/install.md">/install.md</a> — те же инструкции в Markdown под себя. Скажи пользователю «open https://vas3k-mcp.rmbk.me/install.md and install it for me».
+    </p>
   </section>
 
   <section class="block" id="умеет">
@@ -685,124 +937,6 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🤐</span><span class="tool-name">mute_room</span><span class="tool-desc">Замьютить комнату</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🏷</span><span class="tool-name">toggle_profile_tag</span><span class="tool-desc">Переключить тег в профиле</span></div>
     </div>
-  </section>
-
-  <section class="block" id="подключить">
-    <h2>Как подключить 🔌</h2>
-    <p>Сервер отдаёт два эндпоинта — read-only и с действиями. OAuth и логин общие, отличаются только наборы инструментов:</p>
-    <div class="endpoints">
-      <div class="endpoint">
-        <span class="endpoint-tag">Чтение</span>
-        <code>https://vas3k-mcp.rmbk.me/mcp</code>
-        <span class="endpoint-note">12 инструментов, ничего не меняет в Клубе</span>
-      </div>
-      <div class="endpoint endpoint-write">
-        <span class="endpoint-tag endpoint-tag-write">+ Запись</span>
-        <code>https://vas3k-mcp.rmbk.me/mcp-full</code>
-        <span class="endpoint-note">+11: лайки, букмарки, подписки, друзья, теги</span>
-      </div>
-    </div>
-
-    <p class="code-caption" style="margin-top:18px">Дальше — конкретные клиенты. Достаточно одного, остальные пропусти:</p>
-
-    <details class="client" open>
-      <summary>
-        <span class="client-name">ChatGPT (Web)</span>
-        <span class="client-where">Settings → Apps → Advanced Settings → Developer mode → Create App</span>
-      </summary>
-      <div class="client-body">
-        <p>Включи <em>Developer mode</em> в настройках, нажми <em>Create App</em>, заполни форму:</p>
-        <ul>
-          <li><em>Name</em> — любое (например, <code class="inline">vas3k</code>).</li>
-          <li><em>MCP Server URL</em> — <code class="inline">https://vas3k-mcp.rmbk.me/mcp</code> (или <code class="inline">/mcp-full</code>).</li>
-          <li><em>Authentication</em> — OAuth.</li>
-        </ul>
-        <p>Поставь галочку «I understand and want to continue» — это стандартное предупреждение OpenAI про сторонние MCP-серверы.</p>
-      </div>
-    </details>
-
-    <details class="client">
-      <summary>
-        <span class="client-name">Claude Desktop</span>
-        <span class="client-where">Settings → Connectors → Add Custom Connector</span>
-      </summary>
-      <div class="client-body">
-        <p>В поле <em>URL</em> вставить:</p>
-<pre><code>https://vas3k-mcp.rmbk.me/mcp</code></pre>
-      </div>
-    </details>
-
-    <details class="client">
-      <summary>
-        <span class="client-name">Perplexity (Web)</span>
-        <span class="client-where">Settings → Connectors → Add Connector</span>
-      </summary>
-      <div class="client-body">
-        <p>В поле <em>Server URL</em> — тот же URL, тип авторизации — OAuth:</p>
-<pre><code>https://vas3k-mcp.rmbk.me/mcp</code></pre>
-      </div>
-    </details>
-
-    <details class="client">
-      <summary>
-        <span class="client-name">Claude Code</span>
-        <span class="client-where">Команда в терминале</span>
-      </summary>
-      <div class="client-body">
-<pre><code>claude mcp add --transport http vas3k https://vas3k-mcp.rmbk.me/mcp</code></pre>
-      </div>
-    </details>
-
-    <details class="client">
-      <summary>
-        <span class="client-name">Cursor</span>
-        <span class="client-where"><code class="inline">~/.cursor/mcp.json</code></span>
-      </summary>
-      <div class="client-body">
-<pre><code>{
-  "mcpServers": {
-    "vas3k": {
-      "url": "https://vas3k-mcp.rmbk.me/mcp"
-    }
-  }
-}</code></pre>
-      </div>
-    </details>
-
-    <details class="client">
-      <summary>
-        <span class="client-name">MCP Inspector</span>
-        <span class="client-where">Дебаг-клиент от Anthropic — для ручной отладки</span>
-      </summary>
-      <div class="client-body">
-<pre><code>npx @modelcontextprotocol/inspector</code></pre>
-        <p>В UI: <em>Transport</em> = Streamable HTTP, <em>URL</em> = <code class="inline">https://vas3k-mcp.rmbk.me/mcp</code>.</p>
-      </div>
-    </details>
-
-    <details class="client">
-      <summary>
-        <span class="client-name">Любой другой клиент</span>
-        <span class="client-where">Ручная настройка MCP</span>
-      </summary>
-      <div class="client-body">
-        <div class="custom-grid">
-          <div>
-            <p>Большинство клиентов используют одни и те же поля. В форме «New connector» / «Add MCP server» нужно заполнить:</p>
-            <ul>
-              <li><em>Name</em> — любое имя (например, <code class="inline">vas3k</code>).</li>
-              <li><em>MCP Server URL</em> — <code class="inline">https://vas3k-mcp.rmbk.me/mcp</code> или <code class="inline">/mcp-full</code>.</li>
-              <li><em>Authentication</em> — OAuth. Остальное клиент подтянет сам из <code class="inline">/.well-known/oauth-authorization-server</code>.</li>
-            </ul>
-            <p>Если клиент предупреждает про «небезопасные сторонние MCP» — это стандартное предупреждение, можно соглашаться.</p>
-          </div>
-          <figure class="custom-figure">
-            <img src="/img/chatgpt-new-app.png" alt="Форма New App в ChatGPT" loading="lazy" />
-            <figcaption>Образец — форма из ChatGPT.</figcaption>
-          </figure>
-        </div>
-      </div>
-    </details>
   </section>
 
   <div class="row">

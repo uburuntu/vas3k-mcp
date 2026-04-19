@@ -10,6 +10,7 @@
 import type { AuthRequest } from "@cloudflare/workers-oauth-provider";
 import { Hono } from "hono";
 import { UPSTREAM_SCOPE as SCOPE, STATE_TTL_SECONDS, UPSTREAM_TIMEOUT_MS } from "./constants";
+import { installMd } from "./install-md";
 import { landingHtml } from "./landing";
 import type { Env, Props } from "./types";
 
@@ -80,6 +81,20 @@ const app = new Hono<{ Bindings: Env }>();
 app.get("/", (c) => {
   c.header("Cache-Control", "public, max-age=300, s-maxage=3600");
   return c.html(landingHtml);
+});
+
+// Markdown install guide for AI agents — same content at /install.md
+// (intuitive) and /llms.txt (the llmstxt.org convention). Point an agent
+// at either URL and it has every URL + snippet it needs.
+app.get("/install.md", (c) => {
+  c.header("Content-Type", "text/markdown; charset=utf-8");
+  c.header("Cache-Control", "public, max-age=300, s-maxage=3600");
+  return c.body(installMd);
+});
+app.get("/llms.txt", (c) => {
+  c.header("Content-Type", "text/plain; charset=utf-8");
+  c.header("Cache-Control", "public, max-age=300, s-maxage=3600");
+  return c.body(installMd);
 });
 
 app.get("/authorize", async (c) => {
