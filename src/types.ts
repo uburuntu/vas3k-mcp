@@ -22,6 +22,8 @@ export interface Env {
  * client_id/secret stay in env vars and never touch token storage.
  */
 export interface Props {
+  /** Schema version of this Props object. See CURRENT_PROPS_VERSION. */
+  propsVersion: number;
   slug: string;
   fullName: string;
   upstreamAccessToken: string;

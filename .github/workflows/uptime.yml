@@ -1,0 +1,118 @@
+name: Uptime
+
+# Pings the public deployment every 5 minutes from a GitHub Actions cron and
+# opens an issue if it stops responding. Runs only on the canonical repo so
+# forks don't open issues against you.
+#
+# Why GH Actions instead of a Cloudflare-native check:
+#   - Zero extra service to provision; uses the runner you already have
+#   - Free for public repos
+#   - Failed pings auto-create an issue you can SLA against
+#
+# To opt out temporarily, disable the workflow in the GitHub Actions UI.
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  ping:
+    if: github.event_name != 'schedule' || github.repository == 'uburuntu/vas3k-mcp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Probe /.well-known/oauth-authorization-server
+        id: probe
+        run: |
+          set +e
+          for i in 1 2 3; do
+            status=$(curl -s -o /tmp/body -w "%{http_code}" \
+              --max-time 10 \
+              https://vas3k-mcp.rmbk.me/.well-known/oauth-authorization-server)
+            if [ "$status" = "200" ]; then
+              echo "ok=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "Attempt $i returned $status; retrying..."
+            sleep 10
+          done
+          echo "ok=false" >> "$GITHUB_OUTPUT"
+          echo "last_status=$status" >> "$GITHUB_OUTPUT"
+          {
+            echo "body<<EOF"
+            head -c 1000 /tmp/body
+            echo
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Open issue on failure
+        if: steps.probe.outputs.ok == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            const status = `${{ steps.probe.outputs.last_status }}`;
+            const body = `${{ steps.probe.outputs.body }}`;
+            const title = `Uptime: vas3k-mcp.rmbk.me unreachable (HTTP ${status})`;
+
+            // Only open one issue at a time — search for existing open
+            const existing = await github.rest.issues.listForRepo({
+              owner, repo,
+              labels: 'uptime',
+              state: 'open',
+              per_page: 1,
+            });
+            if (existing.data.length > 0) {
+              core.info(`Existing uptime issue #${existing.data[0].number} still open; skipping.`);
+              return;
+            }
+
+            await github.rest.issues.create({
+              owner, repo,
+              title,
+              labels: ['uptime', 'incident'],
+              body: [
+                `Uptime probe to \`https://vas3k-mcp.rmbk.me/.well-known/oauth-authorization-server\` failed three times in a row.`,
+                ``,
+                `Last status: **${status}**`,
+                ``,
+                `Body (first 1k bytes):`,
+                '```',
+                body,
+                '```',
+                ``,
+                `Run: ${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`,
+                ``,
+                `Auto-closed when the probe recovers (manual close still works).`,
+              ].join('\n'),
+            });
+
+      - name: Close existing uptime issues on recovery
+        if: steps.probe.outputs.ok == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            const open = await github.rest.issues.listForRepo({
+              owner, repo,
+              labels: 'uptime',
+              state: 'open',
+              per_page: 10,
+            });
+            for (const issue of open.data) {
+              await github.rest.issues.createComment({
+                owner, repo,
+                issue_number: issue.number,
+                body: `Probe recovered at ${new Date().toISOString()}. Auto-closing.`,
+              });
+              await github.rest.issues.update({
+                owner, repo,
+                issue_number: issue.number,
+                state: 'closed',
+              });
+            }

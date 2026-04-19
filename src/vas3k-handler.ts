@@ -144,7 +144,12 @@ app.get("/callback", async (c) => {
     signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
   });
   if (!tokenResp.ok) {
-    return c.text(`Token exchange failed: ${await tokenResp.text()}`, 502);
+    const body = await tokenResp.text();
+    console.error("[upstream-token-exchange-fail]", {
+      status: tokenResp.status,
+      body: body.slice(0, 200),
+    });
+    return c.text("Token exchange failed", 502);
   }
   const tokens = (await tokenResp.json()) as {
     access_token: string;
@@ -160,13 +165,19 @@ app.get("/callback", async (c) => {
     signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
   });
   if (!meResp.ok) {
-    return c.text(`Failed to fetch /user/me.json: ${await meResp.text()}`, 502);
+    const body = await meResp.text();
+    console.error("[upstream-userinfo-fail]", {
+      status: meResp.status,
+      body: body.slice(0, 200),
+    });
+    return c.text("Failed to fetch userinfo", 502);
   }
   const me = (await meResp.json()) as { user?: { slug?: string; full_name?: string } };
   const slug = me.user?.slug ?? "unknown";
   const fullName = me.user?.full_name ?? slug;
 
   const props: Props = {
+    propsVersion: 1,
     slug,
     fullName,
     upstreamAccessToken: tokens.access_token,

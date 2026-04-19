@@ -29,13 +29,24 @@ const DEFAULT_ACCESS_TOKEN_TTL_SECONDS = 3600;
 const MAX_ACCESS_TOKEN_TTL_SECONDS = 24 * 3600;
 /** Hard request timeout for the upstream refresh call. */
 const UPSTREAM_REFRESH_TIMEOUT_MS = 15_000;
+/** Bump when `Props` shape changes; old tokens then refuse refresh. */
+export const CURRENT_PROPS_VERSION = 1;
 
-async function refreshUpstreamTokens(refreshToken: string) {
-  const e = env as unknown as Env;
-  const response = await fetch(new URL("/auth/openid/token", e.VAS3K_BASE_URL).href, {
+/**
+ * Exchange an upstream refresh token for a fresh access token at vas3k.club.
+ * Exported so unit tests can drive it without instantiating an OAuthProvider.
+ *
+ * Failures here are the canary for upstream outages: a single user 401 is
+ * normal (token revoked), but a sudden burst of failures usually means
+ * vas3k.club is down or the OAuth app got revoked. Logged with a stable
+ * `[upstream-refresh-fail]` tag so the operator can grep `wrangler tail`
+ * or set a Cloudflare Workers Notification rule on it.
+ */
+export async function refreshUpstreamTokens(refreshToken: string, baseUrl: string, clientId: string, clientSecret: string) {
+  const response = await fetch(new URL("/auth/openid/token", baseUrl).href, {
     method: "POST",
     headers: {
-      Authorization: `Basic ${btoa(`${e.VAS3K_CLIENT_ID}:${e.VAS3K_CLIENT_SECRET}`)}`,
+      Authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: new URLSearchParams({
@@ -45,7 +56,9 @@ async function refreshUpstreamTokens(refreshToken: string) {
     signal: AbortSignal.timeout(UPSTREAM_REFRESH_TIMEOUT_MS),
   });
   if (!response.ok) {
-    throw new Error(`vas3k.club refresh failed: ${response.status} ${await response.text()}`);
+    const body = await response.text();
+    console.error("[upstream-refresh-fail]", { status: response.status, body: body.slice(0, 200) });
+    throw new Error(`vas3k.club refresh failed: ${response.status} ${body}`);
   }
   return (await response.json()) as {
     access_token: string;
@@ -106,8 +119,24 @@ export default new OAuthProvider({
     if (options.grantType !== "refresh_token") return;
     const props = options.props as unknown as Props;
     if (!props?.upstreamRefreshToken) return;
+    // propsVersion guard: if a future deploy bumps the schema, this lets us
+    // force everyone to re-auth cleanly instead of silently undefined-ing
+    // fields the new code expects.
+    if (props.propsVersion !== CURRENT_PROPS_VERSION) {
+      console.error("[props-version-mismatch]", {
+        got: props.propsVersion,
+        expected: CURRENT_PROPS_VERSION,
+      });
+      throw new Error("propsVersion mismatch — please re-authorize");
+    }
 
-    const refreshed = await refreshUpstreamTokens(props.upstreamRefreshToken);
+    const e = env as unknown as Env;
+    const refreshed = await refreshUpstreamTokens(
+      props.upstreamRefreshToken,
+      e.VAS3K_BASE_URL,
+      e.VAS3K_CLIENT_ID,
+      e.VAS3K_CLIENT_SECRET,
+    );
     const nextProps: Props = {
       ...props,
       upstreamAccessToken: refreshed.access_token,
