@@ -9,11 +9,9 @@
 
 import type { AuthRequest } from "@cloudflare/workers-oauth-provider";
 import { Hono } from "hono";
-
+import { UPSTREAM_SCOPE as SCOPE, STATE_TTL_SECONDS, UPSTREAM_TIMEOUT_MS } from "./constants";
 import { landingHtml } from "./landing";
 import type { Env, Props } from "./types";
-
-import { STATE_TTL_SECONDS, UPSTREAM_SCOPE as SCOPE, UPSTREAM_TIMEOUT_MS } from "./constants";
 
 // ---------- HMAC-signed state ------------------------------------------------
 // Replaces KV-stored state — eliminates the regional-eventual-consistency
