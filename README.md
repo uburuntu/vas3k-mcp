@@ -117,9 +117,13 @@ that's a different auth shape.)
 ### 4. Push secrets
 
 ```sh
-printf '%s' 'YOUR_CLIENT_ID'     | npx wrangler secret put VAS3K_CLIENT_ID
-printf '%s' 'YOUR_CLIENT_SECRET' | npx wrangler secret put VAS3K_CLIENT_SECRET
-openssl rand -hex 32 | tr -d '\n' | npx wrangler secret put COOKIE_ENCRYPTION_KEY
+# Interactive prompts — values won't land in your shell history.
+npx wrangler secret put VAS3K_CLIENT_ID
+npx wrangler secret put VAS3K_CLIENT_SECRET
+# Generate a fresh 32-byte hex key and paste it into the prompt below
+# (don't pipe via stdin if you care about not leaking it through history):
+openssl rand -hex 32
+npx wrangler secret put COOKIE_ENCRYPTION_KEY
 ```
 
 `COOKIE_ENCRYPTION_KEY` encrypts the per-session `props` (vas3k.club access +

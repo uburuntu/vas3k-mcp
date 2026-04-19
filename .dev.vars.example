@@ -3,3 +3,7 @@
 VAS3K_CLIENT_ID=your-vas3k-app-id
 VAS3K_CLIENT_SECRET=your-vas3k-app-secret
 COOKIE_ENCRYPTION_KEY=replace-with-32-bytes-of-hex
+
+# Public-facing URL for THIS worker. Override the wrangler.jsonc default
+# when running locally so OAuth redirects come back to your dev server.
+PUBLIC_BASE_URL=http://127.0.0.1:8788

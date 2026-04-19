@@ -5,6 +5,8 @@ import type { OAuthHelpers } from "@cloudflare/workers-oauth-provider";
  */
 export interface Env {
   VAS3K_BASE_URL: string;
+  /** Public-facing URL of this worker (e.g. https://vas3k-mcp.rmbk.me). */
+  PUBLIC_BASE_URL: string;
   VAS3K_CLIENT_ID: string;
   VAS3K_CLIENT_SECRET: string;
   COOKIE_ENCRYPTION_KEY: string;
@@ -28,6 +30,9 @@ export interface Props {
   fullName: string;
   upstreamAccessToken: string;
   upstreamRefreshToken?: string;
+  /** vas3k.club-side scopes (e.g. "openid contact"). */
   scope: string;
+  /** MCP-side scopes granted by the user (e.g. ["read", "write"]). */
+  mcpScopes: string[];
   [key: string]: unknown; // satisfy OAuthProvider's loose typing
 }

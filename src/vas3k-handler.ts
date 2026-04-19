@@ -18,6 +18,68 @@ const SCOPE = "openid contact";
 /** Hard request timeout for upstream OAuth calls during the /callback flow. */
 const UPSTREAM_TIMEOUT_MS = 15_000;
 
+// ---------- HMAC-signed state ------------------------------------------------
+// Replaces KV-stored state — eliminates the regional-eventual-consistency
+// race where /callback would arrive at a colo that hadn't yet seen
+// /authorize's KV write. We sign `{oauthReqInfo, exp}` with the
+// COOKIE_ENCRYPTION_KEY secret using HMAC-SHA-256 and put the whole thing
+// in the URL state param. /callback verifies and decodes — no shared
+// storage required.
+
+interface SignedState {
+  oauthReqInfo: AuthRequest;
+  exp: number; // unix epoch seconds
+}
+
+function b64urlEncode(bytes: Uint8Array): string {
+  let str = "";
+  for (const b of bytes) str += String.fromCharCode(b);
+  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function b64urlDecode(s: string): Uint8Array {
+  s = s.replace(/-/g, "+").replace(/_/g, "/");
+  while (s.length % 4) s += "=";
+  const str = atob(s);
+  const bytes = new Uint8Array(str.length);
+  for (let i = 0; i < str.length; i++) bytes[i] = str.charCodeAt(i);
+  return bytes;
+}
+
+async function hmacKey(secret: string): Promise<CryptoKey> {
+  return crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"],
+  );
+}
+
+async function signState(state: SignedState, secret: string): Promise<string> {
+  const payload = new TextEncoder().encode(JSON.stringify(state));
+  const key = await hmacKey(secret);
+  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, payload));
+  return `${b64urlEncode(payload)}.${b64urlEncode(sig)}`;
+}
+
+async function verifyState(token: string, secret: string): Promise<SignedState | null> {
+  const [payloadB64, sigB64] = token.split(".");
+  if (!payloadB64 || !sigB64) return null;
+  const payload = b64urlDecode(payloadB64);
+  const sig = b64urlDecode(sigB64);
+  const key = await hmacKey(secret);
+  const ok = await crypto.subtle.verify("HMAC", key, sig, payload);
+  if (!ok) return null;
+  let parsed: SignedState;
+  try {
+    parsed = JSON.parse(new TextDecoder().decode(payload)) as SignedState;
+  } catch {
+    return null;
+  }
+  if (parsed.exp < Math.floor(Date.now() / 1000)) return null;
+  return parsed;
+}
+
 const app = new Hono<{ Bindings: Env }>();
 
 app.get("/", (c) => {
@@ -47,11 +109,15 @@ app.get("/authorize", async (c) => {
   const clientIdentifier = oauthReqInfo.clientId;
   const redirectUri = oauthReqInfo.redirectUri ?? "(none)";
 
-  // store the original MCP-client OAuth request keyed by an opaque state value
-  const state = crypto.randomUUID();
-  await c.env.OAUTH_KV.put(`state:${state}`, JSON.stringify(oauthReqInfo), {
-    expirationTtl: STATE_TTL_SECONDS,
-  });
+  // HMAC-sign the MCP-side OAuth request and ship it as the upstream `state`
+  // param — no shared KV needed, no regional consistency race.
+  const state = await signState(
+    {
+      oauthReqInfo,
+      exp: Math.floor(Date.now() / 1000) + STATE_TTL_SECONDS,
+    },
+    c.env.COOKIE_ENCRYPTION_KEY,
+  );
 
   return c.html(`<!doctype html><html lang="ru"><head><meta charset="utf-8" /><title>Подтверждение доступа: ${escapeHtml(clientName)}</title>
 <style>body{font-family:-apple-system,system-ui,sans-serif;max-width:34rem;margin:3rem auto;padding:0 1.5rem;color:#1B1B1C;line-height:1.55;background:#FCFDFF}
@@ -100,10 +166,13 @@ app.post("/authorize", async (c) => {
   const state = form.get("state");
   if (typeof state !== "string") return c.text("Missing state", 400);
 
-  const stored = await c.env.OAUTH_KV.get(`state:${state}`);
-  if (!stored) return c.text("State expired or invalid", 400);
+  // Verify the state we minted at GET-time is intact (rejects tampered
+  // / expired tokens). We don't need its contents here — the upstream
+  // will round-trip it back to /callback, which re-verifies.
+  const verified = await verifyState(state, c.env.COOKIE_ENCRYPTION_KEY);
+  if (!verified) return c.text("State expired or invalid", 400);
 
-  const redirectUri = new URL("/callback", c.req.url).href;
+  const redirectUri = new URL("/callback", c.env.PUBLIC_BASE_URL).href;
   const upstream = new URL("/auth/openid/authorize", c.env.VAS3K_BASE_URL);
   upstream.searchParams.set("response_type", "code");
   upstream.searchParams.set("client_id", c.env.VAS3K_CLIENT_ID);
@@ -121,12 +190,11 @@ app.get("/callback", async (c) => {
   if (error) return c.text(`vas3k.club returned: ${error}`, 400);
   if (!code || !state) return c.text("Missing code/state", 400);
 
-  const stored = await c.env.OAUTH_KV.get(`state:${state}`);
-  if (!stored) return c.text("State expired or invalid", 400);
-  await c.env.OAUTH_KV.delete(`state:${state}`);
+  const verified = await verifyState(state, c.env.COOKIE_ENCRYPTION_KEY);
+  if (!verified) return c.text("State expired or invalid", 400);
 
-  const oauthReqInfo = JSON.parse(stored) as AuthRequest;
-  const redirectUri = new URL("/callback", c.req.url).href;
+  const oauthReqInfo = verified.oauthReqInfo;
+  const redirectUri = new URL("/callback", c.env.PUBLIC_BASE_URL).href;
 
   // exchange code -> tokens at vas3k.club
   const tokenResp = await fetch(new URL("/auth/openid/token", c.env.VAS3K_BASE_URL).href, {
@@ -183,6 +251,10 @@ app.get("/callback", async (c) => {
     upstreamAccessToken: tokens.access_token,
     upstreamRefreshToken: tokens.refresh_token,
     scope: tokens.scope ?? SCOPE,
+    // The MCP-side scopes the original `oauthReqInfo` requested. Echo back
+    // exactly what the client asked for so /mcp-full's write tools can
+    // gate on `props.mcpScopes.includes("write")`.
+    mcpScopes: oauthReqInfo.scope ?? ["read"],
   };
 
   const { redirectTo } = await c.env.OAUTH_PROVIDER.completeAuthorization({

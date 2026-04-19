@@ -41,6 +41,7 @@ describe("tokenExchangeCallback rotation contract", () => {
   it("sets accessTokenProps.upstreamAccessToken to the new token", () => {
     const before: Props = {
       propsVersion: 1,
+      mcpScopes: ["read", "write"],
       slug: "vas3k",
       fullName: "Vas3k",
       upstreamAccessToken: "old-access",
@@ -59,6 +60,7 @@ describe("tokenExchangeCallback rotation contract", () => {
   it("rotates upstreamRefreshToken when upstream returns a new one", () => {
     const before: Props = {
       propsVersion: 1,
+      mcpScopes: ["read", "write"],
       slug: "vas3k",
       fullName: "Vas3k",
       upstreamAccessToken: "a",
@@ -77,6 +79,7 @@ describe("tokenExchangeCallback rotation contract", () => {
   it("keeps the existing refresh token when upstream omits refresh_token", () => {
     const before: Props = {
       propsVersion: 1,
+      mcpScopes: ["read", "write"],
       slug: "vas3k",
       fullName: "Vas3k",
       upstreamAccessToken: "a",
@@ -92,6 +95,7 @@ describe("tokenExchangeCallback rotation contract", () => {
   it("preserves identity fields (slug, fullName, scope) across rotation", () => {
     const before: Props = {
       propsVersion: 1,
+      mcpScopes: ["read", "write"],
       slug: "vas3k",
       fullName: "Вастрик",
       upstreamAccessToken: "a",

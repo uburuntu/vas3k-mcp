@@ -42,7 +42,12 @@ export const CURRENT_PROPS_VERSION = 1;
  * `[upstream-refresh-fail]` tag so the operator can grep `wrangler tail`
  * or set a Cloudflare Workers Notification rule on it.
  */
-export async function refreshUpstreamTokens(refreshToken: string, baseUrl: string, clientId: string, clientSecret: string) {
+export async function refreshUpstreamTokens(
+  refreshToken: string,
+  baseUrl: string,
+  clientId: string,
+  clientSecret: string,
+) {
   const response = await fetch(new URL("/auth/openid/token", baseUrl).href, {
     method: "POST",
     headers: {
@@ -98,18 +103,35 @@ export default new OAuthProvider({
   // McpAgent.serve(path) defaults `binding` to "MCP_OBJECT", so without an
   // explicit binding both classes would route through the same Durable Object
   // and the second class's tools would never run. Pass each its own binding.
+  // `transport: "auto"` makes the same route serve both Streamable HTTP
+  // (the current default) AND legacy SSE for the handful of pre-mid-2025
+  // clients that probe SSE first. Single mount, no extra route to manage.
   apiHandlers: {
-    "/mcp-full": MyMCPFull.serve("/mcp-full", { binding: "MCP_OBJECT_FULL" }) as never,
-    "/mcp": MyMCP.serve("/mcp", { binding: "MCP_OBJECT" }) as never,
+    "/mcp-full": MyMCPFull.serve("/mcp-full", {
+      binding: "MCP_OBJECT_FULL",
+      transport: "auto",
+    }) as never,
+    "/mcp": MyMCP.serve("/mcp", {
+      binding: "MCP_OBJECT",
+      transport: "auto",
+    }) as never,
   },
   defaultHandler: Vas3kHandler as never,
   authorizeEndpoint: "/authorize",
   tokenEndpoint: "/token",
   clientRegistrationEndpoint: "/register",
-  scopesSupported: ["read"],
+  // `scopesSupported` advertises what an MCP client may request. `read` is
+  // necessary for any tool, `write` is required for /mcp-full's mutating
+  // tools (we check at tool-call time via `props.mcpScopes`). Honest
+  // limitation: today most clients request the full set by default; the
+  // boundary is real only when a client explicitly drops `write`.
+  scopesSupported: ["read", "write"],
   clientIdMetadataDocumentEnabled: true,
   allowPlainPKCE: false,
   allowImplicitFlow: false,
+  // Surfaced at /.well-known/oauth-protected-resource — helps MCP-aware
+  // clients pick a sensible display name when they list connected servers.
+  resourceMetadata: { resource_name: "vas3k-mcp" },
 
   /**
    * When the MCP client refreshes its token, transparently refresh the

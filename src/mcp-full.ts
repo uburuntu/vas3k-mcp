@@ -26,6 +26,7 @@
 import { z } from "zod";
 
 import { MyMCP } from "./mcp";
+import { Vas3kAPIError } from "./vas3k-client";
 
 const COMMENT_ID = z.uuid().describe("Comment UUID (from list_post_comments)");
 const SLUG = z.string().describe("URL slug — letters, digits, _ or -");
@@ -33,6 +34,25 @@ const SLUG = z.string().describe("URL slug — letters, digits, _ or -");
 export class MyMCPFull extends MyMCP {
   // Intentionally do NOT redeclare `server` — inherit the parent's instance
   // so super.init()'s registrations and ours land on the same McpServer.
+
+  /**
+   * Like `client()`, but additionally enforces that the current session was
+   * granted the `write` MCP-side scope. Use this from every write-tool
+   * handler instead of `client()`. Today most MCP clients request the full
+   * scope set so the check is a no-op for them — but a security-conscious
+   * client (or future tightening of the consent UI) can drop `write` and
+   * the boundary will hold.
+   */
+  protected writeClient(): ReturnType<MyMCP["client"]> {
+    const scopes = this.props?.mcpScopes;
+    if (!scopes?.includes("write")) {
+      throw new Vas3kAPIError(403, {
+        error: "missing_scope",
+        error_description: "this tool requires the `write` MCP scope",
+      });
+    }
+    return this.client();
+  }
 
   async init() {
     // Inherit all read tools first.
@@ -46,7 +66,7 @@ export class MyMCPFull extends MyMCP {
           "Toggle a bookmark on a post. Adding (or removing) a bookmark; same call performs both.",
         inputSchema: { post_slug: SLUG },
       },
-      async ({ post_slug }) => this.wrap(() => this.client().bookmarkPost(post_slug)),
+      async ({ post_slug }) => this.wrap(() => this.writeClient().bookmarkPost(post_slug)),
     );
 
     this.server.registerTool(
@@ -56,7 +76,7 @@ export class MyMCPFull extends MyMCP {
           "Upvote a post. Idempotent — calling twice does NOT downvote (use retract_post_vote for that).",
         inputSchema: { post_slug: SLUG },
       },
-      async ({ post_slug }) => this.wrap(() => this.client().upvotePost(post_slug)),
+      async ({ post_slug }) => this.wrap(() => this.writeClient().upvotePost(post_slug)),
     );
 
     this.server.registerTool(
@@ -65,7 +85,7 @@ export class MyMCPFull extends MyMCP {
         description: "Retract a previously cast upvote on a post.",
         inputSchema: { post_slug: SLUG },
       },
-      async ({ post_slug }) => this.wrap(() => this.client().retractPostVote(post_slug)),
+      async ({ post_slug }) => this.wrap(() => this.writeClient().retractPostVote(post_slug)),
     );
 
     this.server.registerTool(
@@ -74,7 +94,8 @@ export class MyMCPFull extends MyMCP {
         description: "Subscribe to (or unsubscribe from) notifications for new comments on a post.",
         inputSchema: { post_slug: SLUG },
       },
-      async ({ post_slug }) => this.wrap(() => this.client().togglePostSubscription(post_slug)),
+      async ({ post_slug }) =>
+        this.wrap(() => this.writeClient().togglePostSubscription(post_slug)),
     );
 
     this.server.registerTool(
@@ -84,7 +105,8 @@ export class MyMCPFull extends MyMCP {
           "For posts of type `event`: toggle whether the authenticated user is participating.",
         inputSchema: { post_slug: SLUG },
       },
-      async ({ post_slug }) => this.wrap(() => this.client().toggleEventParticipation(post_slug)),
+      async ({ post_slug }) =>
+        this.wrap(() => this.writeClient().toggleEventParticipation(post_slug)),
     );
 
     // ---------- comment-level write actions ------------------------------
@@ -95,7 +117,7 @@ export class MyMCPFull extends MyMCP {
           "Upvote a comment by its UUID. Get the UUID from `list_post_comments`. Idempotent.",
         inputSchema: { comment_id: COMMENT_ID },
       },
-      async ({ comment_id }) => this.wrap(() => this.client().upvoteComment(comment_id)),
+      async ({ comment_id }) => this.wrap(() => this.writeClient().upvoteComment(comment_id)),
     );
 
     this.server.registerTool(
@@ -104,7 +126,7 @@ export class MyMCPFull extends MyMCP {
         description: "Retract a previously cast upvote on a comment.",
         inputSchema: { comment_id: COMMENT_ID },
       },
-      async ({ comment_id }) => this.wrap(() => this.client().retractCommentVote(comment_id)),
+      async ({ comment_id }) => this.wrap(() => this.writeClient().retractCommentVote(comment_id)),
     );
 
     // ---------- social write actions -------------------------------------
@@ -115,7 +137,7 @@ export class MyMCPFull extends MyMCP {
           "Toggle friendship with another club member. Sends or revokes a friend request.",
         inputSchema: { user_slug: SLUG },
       },
-      async ({ user_slug }) => this.wrap(() => this.client().toggleFriend(user_slug)),
+      async ({ user_slug }) => this.wrap(() => this.writeClient().toggleFriend(user_slug)),
     );
 
     // toggle_mute_user is intentionally absent — see Vas3kClient comment:
@@ -129,7 +151,7 @@ export class MyMCPFull extends MyMCP {
         description: "Toggle subscription to a room (e.g. `ai`, `apps`). Affects email digests.",
         inputSchema: { room_slug: SLUG },
       },
-      async ({ room_slug }) => this.wrap(() => this.client().subscribeRoom(room_slug)),
+      async ({ room_slug }) => this.wrap(() => this.writeClient().subscribeRoom(room_slug)),
     );
 
     this.server.registerTool(
@@ -138,7 +160,7 @@ export class MyMCPFull extends MyMCP {
         description: "Toggle muting a room. Muted rooms don't appear in the main feed.",
         inputSchema: { room_slug: SLUG },
       },
-      async ({ room_slug }) => this.wrap(() => this.client().muteRoom(room_slug)),
+      async ({ room_slug }) => this.wrap(() => this.writeClient().muteRoom(room_slug)),
     );
 
     // ---------- profile ------------------------------------------------
@@ -149,7 +171,7 @@ export class MyMCPFull extends MyMCP {
           "Toggle a topical tag on the authenticated user's profile (e.g. `python`, `rust`, `kyiv`).",
         inputSchema: { tag_code: SLUG },
       },
-      async ({ tag_code }) => this.wrap(() => this.client().toggleProfileTag(tag_code)),
+      async ({ tag_code }) => this.wrap(() => this.writeClient().toggleProfileTag(tag_code)),
     );
   }
 }

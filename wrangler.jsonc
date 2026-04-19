@@ -17,7 +17,11 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
 
   "vars": {
-    "VAS3K_BASE_URL": "https://vas3k.club"
+    "VAS3K_BASE_URL": "https://vas3k.club",
+    // The public-facing URL of THIS worker. Used to build the OAuth
+    // redirect_uri without depending on c.req.url's Host header — keeps the
+    // redirect_uri stable even if a request lands via a workers.dev fallback.
+    "PUBLIC_BASE_URL": "https://vas3k-mcp.rmbk.me"
   },
 
   "routes": [{ "pattern": "vas3k-mcp.rmbk.me", "custom_domain": true }],
