@@ -312,6 +312,120 @@ main {
   color: #1B1B1C;
 }
 
+/* endpoint cards (the "two URLs" callout) */
+.endpoints {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+.endpoint {
+  display: grid;
+  gap: 6px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  border: 1px solid transparent;
+}
+.endpoint-write { border-color: var(--accent-strong); background: rgba(255, 196, 85, 0.28); }
+@media (prefers-color-scheme: dark) {
+  .endpoint-write { background: rgba(255, 196, 85, 0.16); }
+}
+.endpoint code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 14px;
+  color: var(--brighter-text-color);
+  word-break: break-all;
+  background: transparent;
+  padding: 0;
+}
+.endpoint-tag {
+  display: inline-block;
+  width: fit-content;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.06);
+  color: var(--brighter-text-color);
+}
+@media (prefers-color-scheme: dark) {
+  .endpoint-tag { background: rgba(255,255,255,0.1); }
+}
+.endpoint-tag-write { background: var(--accent); color: #1B1B1C; }
+.endpoint-note { font-size: 13px; opacity: 0.78; line-height: 1.4; }
+
+/* per-client accordion */
+.client {
+  border-top: 1px solid var(--hairline);
+  padding: 0;
+}
+.client:last-of-type { border-bottom: 1px solid var(--hairline); }
+.client + .client { margin-top: 0; }
+.client > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  user-select: none;
+}
+.client > summary::-webkit-details-marker { display: none; }
+.client > summary::after {
+  content: "+";
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 18px;
+  font-weight: 600;
+  width: 24px;
+  text-align: center;
+  opacity: 0.5;
+  transition: transform .2s ease, opacity .2s ease;
+}
+.client[open] > summary::after { content: "−"; opacity: 1; }
+.client > summary:hover { background: rgba(0,0,0,0.025); }
+@media (prefers-color-scheme: dark) {
+  .client > summary:hover { background: rgba(255,255,255,0.04); }
+}
+.client-name {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--brighter-text-color);
+}
+.client-where {
+  font-size: 13px;
+  opacity: 0.7;
+  margin-left: auto;
+  margin-right: 12px;
+}
+.client-where code.inline {
+  font-size: 12px;
+  background: rgba(0,0,0,0.06);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+@media (prefers-color-scheme: dark) {
+  .client-where code.inline { background: rgba(255,255,255,0.08); }
+}
+.client-body {
+  padding: 0 4px 16px;
+  animation: clientReveal .25s ease-out;
+}
+.client-body p { margin: 4px 0 10px; }
+.client-body em { font-style: normal; font-weight: 600; color: var(--brighter-text-color); }
+@keyframes clientReveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+@media (max-width: 570px) {
+  .client > summary { padding: 12px 2px; }
+  .client-where { margin-left: 0; width: 100%; order: 3; }
+}
+
 /* code block — mirrors base.css "pre > code" */
 pre {
   margin: 18px 0 8px;
@@ -398,7 +512,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
   <section class="hero">
     <span class="hero-tag">🤖 MCP × 🥑 Вастрик.Клуб</span>
     <h1>MCP-сервер<br />для Клуба</h1>
-    <p>Подключи Claude, Cursor и других AI-ассистентов к Клубу по OAuth — пусть читают посты, ищут людей и листают ленту вместо тебя.</p>
+    <p>Подключи Claude, Cursor и других AI-ассистентов к Клубу по OAuth — пусть читают посты, ищут людей и копаются в ленте, пока ты занят чем-то поинтереснее.</p>
     <div class="hero-cta">
       <a href="#подключить" class="button">Как подключить →</a>
       <a href="https://github.com/uburuntu/vas3k-mcp" class="button button-ghost" target="_blank" rel="noopener">GitHub</a>
@@ -408,18 +522,18 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
   <section class="block" id="зачем">
     <h2>Что это и зачем 🤔</h2>
     <p class="lede">
-      <strong>MCP (Model Context Protocol)</strong> — свежий стандарт от Anthropic, чтобы AI-ассистенты умели ходить в твои сервисы и работать с настоящими данными, а не выдумывать ответы.
+      <strong>MCP (Model Context Protocol)</strong> — стандарт от Anthropic, чтобы AI-ассистенты ходили в реальные сервисы по API, а не пересказывали обучающую выборку.
     </p>
     <p>
-      Этот сервер подключает Клуб как обычное OAuth-приложение — то самое, что живёт на странице <a href="https://vas3k.club/apps/" target="_blank" rel="noopener">vas3k.club/apps/</a>. Авторизуешься один раз, и Claude может попросить себе твою ленту, найти человека по тегу или вытащить markdown поста, чтобы что-нибудь по нему сделать.
+      Этот сервер подключает Клуб как обычное OAuth-приложение — то самое, что живёт на странице <a href="https://vas3k.club/apps/" target="_blank" rel="noopener">vas3k.club/apps/</a>. Авторизуешься один раз — и Claude может вытащить твою ленту, найти человека по тегу или взять markdown поста, чтобы пересказать, перевести или процитировать.
     </p>
   </section>
 
   <section class="block" id="умеет">
     <h2>Что умеет 🛠</h2>
 
-    <h3 class="tool-group-title">Только чтение — 12 тулзов <span class="tool-group-badge">/mcp</span></h3>
-    <p class="tool-group-desc">Доступно на обоих эндпоинтах. Ничего не меняет в Клубе.</p>
+    <h3 class="tool-group-title">Только чтение — 12 инструментов <span class="tool-group-badge">/mcp</span></h3>
+    <p class="tool-group-desc">Доступны на обоих эндпоинтах. Ничего не меняют в Клубе.</p>
     <div class="tools">
       <div class="tool"><span class="tool-emoji" aria-hidden="true">👤</span><span class="tool-name">get_me</span><span class="tool-desc">Твой профиль</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🧑‍🚀</span><span class="tool-name">get_user</span><span class="tool-desc">Профиль участника по slug</span></div>
@@ -428,7 +542,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🎖</span><span class="tool-name">get_user_achievements</span><span class="tool-desc">Ачивки за активность</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">📲</span><span class="tool-name">find_user_by_telegram</span><span class="tool-desc">Найти по числовому Telegram ID</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">📝</span><span class="tool-name">get_post</span><span class="tool-desc">Пост по типу и slug</span></div>
-      <div class="tool"><span class="tool-emoji" aria-hidden="true">📄</span><span class="tool-name">get_post_markdown</span><span class="tool-desc">Сырой markdown поста</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">📄</span><span class="tool-name">get_post_markdown</span><span class="tool-desc">Markdown поста</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">💬</span><span class="tool-name">list_post_comments</span><span class="tool-desc">Комменты под постом</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">📰</span><span class="tool-name">get_feed</span><span class="tool-desc">Страница ленты с фильтрами</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🔍</span><span class="tool-name">search_users</span><span class="tool-desc">Поиск людей по префиксу</span></div>
@@ -436,13 +550,13 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
     </div>
 
     <h3 class="tool-group-title">С правом писать — ещё 11 <span class="tool-group-badge tool-group-badge-write">/mcp-full</span></h3>
-    <p class="tool-group-desc">Доступно только на <code class="inline">/mcp-full</code>. Меняет состояние твоего аккаунта — лайки, букмарки, подписки. AI делает это от твоего имени, поэтому проверяй, что он там вытворяет.</p>
+    <p class="tool-group-desc">Только на <code class="inline">/mcp-full</code>. Меняют состояние аккаунта — лайки, букмарки, подписки и т.п. AI делает это от твоего имени.</p>
     <div class="tools">
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🔖</span><span class="tool-name">bookmark_post</span><span class="tool-desc">Добавить или убрать букмарк</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">👍</span><span class="tool-name">upvote_post</span><span class="tool-desc">Лайкнуть пост</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">↩️</span><span class="tool-name">retract_post_vote</span><span class="tool-desc">Снять свой лайк с поста</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🔔</span><span class="tool-name">toggle_post_subscription</span><span class="tool-desc">Подписка на новые комменты</span></div>
-      <div class="tool"><span class="tool-emoji" aria-hidden="true">🎟</span><span class="tool-name">toggle_event_participation</span><span class="tool-desc">Отметиться на ивенте</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">🎟</span><span class="tool-name">toggle_event_participation</span><span class="tool-desc">Отметиться на ивенте или сняться</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">💚</span><span class="tool-name">upvote_comment</span><span class="tool-desc">Лайкнуть комментарий</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">↩️</span><span class="tool-name">retract_comment_vote</span><span class="tool-desc">Снять лайк с коммента</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🫂</span><span class="tool-name">toggle_friend</span><span class="tool-desc">Отправить или отозвать запрос в друзья</span></div>
@@ -454,47 +568,120 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
 
   <section class="block" id="подключить">
     <h2>Как подключить 🔌</h2>
-    <p>Сервер живёт по двум адресам — выбирай, что надо. Оба используют один OAuth, авторизация одинаковая.</p>
+    <p>Сервер отдаёт два эндпоинта — read-only и с правом писать. OAuth и логин общие, отличаются только тулзы:</p>
+    <div class="endpoints">
+      <div class="endpoint">
+        <span class="endpoint-tag">Чтение</span>
+        <code>https://vas3k-mcp.rmbk.me/mcp</code>
+        <span class="endpoint-note">12 инструментов, ничего не меняет в Клубе</span>
+      </div>
+      <div class="endpoint endpoint-write">
+        <span class="endpoint-tag endpoint-tag-write">+ Запись</span>
+        <code>https://vas3k-mcp.rmbk.me/mcp-full</code>
+        <span class="endpoint-note">+11: лайки, букмарки, подписки, друзья, теги</span>
+      </div>
+    </div>
 
-    <p><strong>Только чтение</strong> (по умолчанию, безопаснее) — 12 тулзов, ничего не меняет в Клубе:</p>
+    <p class="code-caption" style="margin-top:18px">Дальше — конкретные клиенты. Достаточно одного, остальные пропусти:</p>
+
+    <details class="client" open>
+      <summary>
+        <span class="client-name">Claude Desktop</span>
+        <span class="client-where">Settings → Connectors → Add Custom Connector</span>
+      </summary>
+      <div class="client-body">
+        <p>В поле <em>URL</em> вставить:</p>
+<pre><code>https://vas3k-mcp.rmbk.me/mcp</code></pre>
+      </div>
+    </details>
+
+    <details class="client">
+      <summary>
+        <span class="client-name">Claude Code</span>
+        <span class="client-where">Команда в терминале</span>
+      </summary>
+      <div class="client-body">
+<pre><code>claude mcp add --transport http vas3k https://vas3k-mcp.rmbk.me/mcp</code></pre>
+      </div>
+    </details>
+
+    <details class="client">
+      <summary>
+        <span class="client-name">Cursor</span>
+        <span class="client-where"><code class="inline">~/.cursor/mcp.json</code></span>
+      </summary>
+      <div class="client-body">
 <pre><code>{
   "mcpServers": {
-    "vas3k-club": {
+    "vas3k": {
       "url": "https://vas3k-mcp.rmbk.me/mcp"
     }
   }
 }</code></pre>
+      </div>
+    </details>
 
-    <p><strong>С правом писать</strong> — те же 12 тулзов плюс ещё 12: лайки, букмарки, подписки на посты и комнаты, дружба, мьют, профильные теги. Удобно, если хочешь, чтобы AI реально тебе помогал листать Клуб, а не только смотрел:</p>
+    <details class="client">
+      <summary>
+        <span class="client-name">VS Code</span>
+        <span class="client-where"><code class="inline">.vscode/mcp.json</code></span>
+      </summary>
+      <div class="client-body">
 <pre><code>{
-  "mcpServers": {
-    "vas3k-club": {
-      "url": "https://vas3k-mcp.rmbk.me/mcp-full"
+  "servers": {
+    "vas3k": {
+      "type": "http",
+      "url": "https://vas3k-mcp.rmbk.me/mcp"
     }
   }
 }</code></pre>
-    <p class="code-caption">Транспорт — стримящийся HTTP. AI в режиме <code class="inline">/mcp-full</code> сможет лайкать и подписывать тебя на посты, поэтому проверяй, что он там делает.</p>
+      </div>
+    </details>
+
+    <details class="client">
+      <summary>
+        <span class="client-name">ChatGPT</span>
+        <span class="client-where">Settings → Apps → Create App</span>
+      </summary>
+      <div class="client-body">
+        <p>В поле <em>MCP Server URL</em> вставить тот же URL, тип авторизации — OAuth:</p>
+<pre><code>https://vas3k-mcp.rmbk.me/mcp</code></pre>
+      </div>
+    </details>
+
+    <details class="client">
+      <summary>
+        <span class="client-name">MCP Inspector</span>
+        <span class="client-where">Дебаг-клиент от Anthropic — удобно посмотреть на ручки руками</span>
+      </summary>
+      <div class="client-body">
+<pre><code>npx @modelcontextprotocol/inspector</code></pre>
+        <p>В открывшемся UI: <em>Transport</em> = Streamable HTTP, <em>URL</em> = <code class="inline">https://vas3k-mcp.rmbk.me/mcp</code>.</p>
+      </div>
+    </details>
+
+    <p class="code-caption">Не нашёл свой клиент? Большинство поддерживают тот же шаблон <code class="inline">{ "url": "..." }</code>. Список совместимости — в <a href="https://modelcontextprotocol.io/clients" target="_blank" rel="noopener">MCP-доках</a>.</p>
   </section>
 
   <div class="row">
     <section class="block" id="безопасность">
       <h2>Приватность 🔒</h2>
       <ul class="checklist">
-        <li>Read-only — ничего не пишет, не лайкает и не комментит за тебя.</li>
-        <li>OAuth — те же скоупы, что у любого приложения с <a href="https://vas3k.club/apps/" target="_blank" rel="noopener">/apps/</a>.</li>
-        <li>Доступ можно отозвать одной кнопкой там же.</li>
-        <li>Токены живут в Cloudflare KV в зашифрованном виде, наружу не торчат.</li>
-        <li>Никакой телеметрии — твои данные не уходят никуда, кроме твоего AI-клиента.</li>
+        <li>На <code class="inline">/mcp</code> — только чтение. На <code class="inline">/mcp-full</code> — то же самое плюс действия от твоего имени.</li>
+        <li>OAuth ровно с теми же правами, что у любого приложения со страницы <a href="https://vas3k.club/apps/" target="_blank" rel="noopener">/apps/</a>.</li>
+        <li>Доступ отзывается там же одной кнопкой.</li>
+        <li>Токены шифруются перед записью в Cloudflare KV (ключ — секрет инстанса), наружу не отдаются.</li>
+        <li>Никакой телеметрии — данные едут только в твой AI-клиент.</li>
       </ul>
     </section>
 
     <section class="block" id="хостить">
-      <h2>Хостить у себя 🏠</h2>
+      <h2>Свой инстанс 🏠</h2>
       <p>
-        Код открытый — если не доверяешь хостед-версии, развернёшь свой Worker минут за десять. Регистрируешь приложение на <a href="https://vas3k.club/apps/" target="_blank" rel="noopener">vas3k.club/apps/</a>, прописываешь секреты и KV в <code class="inline">wrangler.toml</code>, и <code class="inline">pnpm deploy</code>. Подробности — в README.
+        Код под MIT — можно поднять копию на своём Cloudflare-аккаунте. Шаги, секреты и KV-биндинги — в <a href="https://github.com/uburuntu/vas3k-mcp#self-host-on-cloudflare-workers" target="_blank" rel="noopener">README</a>.
       </p>
       <p>
-        Репка: <a href="https://github.com/uburuntu/vas3k-mcp" target="_blank" rel="noopener">github.com/uburuntu/vas3k-mcp</a>. PR-ы и баг-репорты приветствуются.
+        Исходники: <a href="https://github.com/uburuntu/vas3k-mcp" target="_blank" rel="noopener">github.com/uburuntu/vas3k-mcp</a>. Issues и PR — туда же.
       </p>
     </section>
   </div>
