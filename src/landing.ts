@@ -281,6 +281,37 @@ main {
 .tool-name { font-weight: 700; color: var(--brighter-text-color); }
 .tool-desc { font-size: 14px; opacity: 0.78; line-height: 1.4; }
 
+.tool-group-title {
+  font-size: 1.05rem;
+  margin: 28px 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tool-group-title:first-of-type { margin-top: 8px; }
+.tool-group-desc {
+  font-size: 14px;
+  opacity: 0.78;
+  margin: 0;
+  line-height: 1.5;
+}
+.tool-group-badge {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--brighter-text-color);
+  letter-spacing: 0.02em;
+}
+.tool-group-badge-write {
+  background: var(--accent);
+  color: #1B1B1C;
+}
+
 /* code block — mirrors base.css "pre > code" */
 pre {
   margin: 18px 0 8px;
@@ -386,7 +417,9 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
 
   <section class="block" id="умеет">
     <h2>Что умеет 🛠</h2>
-    <p>12 тулзов, которые маппятся прямо на API Клуба:</p>
+
+    <h3 class="tool-group-title">Только чтение — 12 тулзов <span class="tool-group-badge">/mcp</span></h3>
+    <p class="tool-group-desc">Доступно на обоих эндпоинтах. Ничего не меняет в Клубе.</p>
     <div class="tools">
       <div class="tool"><span class="tool-emoji" aria-hidden="true">👤</span><span class="tool-name">get_me</span><span class="tool-desc">Твой профиль</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🧑‍🚀</span><span class="tool-name">get_user</span><span class="tool-desc">Профиль участника по slug</span></div>
@@ -400,6 +433,23 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
       <div class="tool"><span class="tool-emoji" aria-hidden="true">📰</span><span class="tool-name">get_feed</span><span class="tool-desc">Страница ленты с фильтрами</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🔍</span><span class="tool-name">search_users</span><span class="tool-desc">Поиск людей по префиксу</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🔖</span><span class="tool-name">search_tags</span><span class="tool-desc">Поиск тегов с фильтром группы</span></div>
+    </div>
+
+    <h3 class="tool-group-title">С правом писать — ещё 12 <span class="tool-group-badge tool-group-badge-write">/mcp-full</span></h3>
+    <p class="tool-group-desc">Доступно только на <code class="inline">/mcp-full</code>. Меняет состояние твоего аккаунта — лайки, букмарки, подписки. AI делает это от твоего имени, поэтому проверяй, что он там вытворяет.</p>
+    <div class="tools">
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">🔖</span><span class="tool-name">bookmark_post</span><span class="tool-desc">Добавить или убрать букмарк</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">👍</span><span class="tool-name">upvote_post</span><span class="tool-desc">Лайкнуть пост</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">↩️</span><span class="tool-name">retract_post_vote</span><span class="tool-desc">Снять свой лайк с поста</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">🔔</span><span class="tool-name">toggle_post_subscription</span><span class="tool-desc">Подписка на новые комменты</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">🎟</span><span class="tool-name">toggle_event_participation</span><span class="tool-desc">Отметиться на ивенте</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">💚</span><span class="tool-name">upvote_comment</span><span class="tool-desc">Лайкнуть комментарий</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">↩️</span><span class="tool-name">retract_comment_vote</span><span class="tool-desc">Снять лайк с коммента</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">🫂</span><span class="tool-name">toggle_friend</span><span class="tool-desc">Отправить или отозвать запрос в друзья</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">🔇</span><span class="tool-name">toggle_mute_user</span><span class="tool-desc">Замьютить или вернуть юзера</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">📥</span><span class="tool-name">subscribe_room</span><span class="tool-desc">Подписаться на комнату</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">🤐</span><span class="tool-name">mute_room</span><span class="tool-desc">Замьютить комнату</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">🏷</span><span class="tool-name">toggle_profile_tag</span><span class="tool-desc">Переключить тег в профиле</span></div>
     </div>
   </section>
 

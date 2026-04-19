@@ -116,4 +116,53 @@ describe.skipIf(!serviceToken)("vas3k.club contract @ %s".replace("%s", baseUrl)
       Vas3kAPIError,
     );
   });
+
+  // ---- write tools (the /mcp-full surface) -------------------------------
+  // Each test below restores state by toggling twice or by calling retract,
+  // so the fixture state is the same after the suite as before.
+  // Skipped per-test if the corresponding fixture env var isn't set, so
+  // running against production by mistake doesn't mutate real data.
+
+  const postSlug = process.env.VAS3K_TEST_POST_SLUG;
+  const roomSlug = process.env.VAS3K_TEST_ROOM_SLUG;
+  const friendSlug = process.env.VAS3K_TEST_FRIEND_SLUG;
+
+  it.skipIf(!postSlug)("upvote_post + retract_post_vote round-trip", async () => {
+    await client.upvotePost(postSlug!);
+    await client.retractPostVote(postSlug!);
+  });
+
+  it.skipIf(!postSlug)("bookmark_post toggles cleanly twice", async () => {
+    await client.bookmarkPost(postSlug!); // on
+    await client.bookmarkPost(postSlug!); // off — back to baseline
+  });
+
+  it.skipIf(!postSlug)("toggle_post_subscription toggles cleanly twice", async () => {
+    await client.togglePostSubscription(postSlug!);
+    await client.togglePostSubscription(postSlug!);
+  });
+
+  it.skipIf(!roomSlug)("subscribe_room toggles cleanly twice", async () => {
+    await client.subscribeRoom(roomSlug!);
+    await client.subscribeRoom(roomSlug!);
+  });
+
+  it.skipIf(!roomSlug)("mute_room toggles cleanly twice", async () => {
+    await client.muteRoom(roomSlug!);
+    await client.muteRoom(roomSlug!);
+  });
+
+  it.skipIf(!friendSlug)("toggle_friend toggles cleanly twice", async () => {
+    await client.toggleFriend(friendSlug!);
+    await client.toggleFriend(friendSlug!);
+  });
+
+  it.skipIf(!friendSlug)("toggle_mute_user toggles cleanly twice", async () => {
+    await client.toggleMuteUser(friendSlug!);
+    await client.toggleMuteUser(friendSlug!);
+  });
+
+  it("invalid post slug rejects before fetch (slug validation)", async () => {
+    await expect(client.upvotePost("../etc/passwd")).rejects.toBeInstanceOf(Vas3kAPIError);
+  });
 });

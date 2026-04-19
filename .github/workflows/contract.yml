@@ -129,7 +129,7 @@ jobs:
           PYTHONUNBUFFERED: "1"
         run: python3 manage.py migrate --noinput
 
-      - name: Bootstrap god user + OAuth app, capture service token
+      - name: Bootstrap fixtures (user, OAuth app, post, room, friend)
         id: bootstrap
         working-directory: vas3k.club
         env:
@@ -142,53 +142,30 @@ jobs:
           DEBUG: "true"
           TESTS_RUN: "da"
           PYTHONUNBUFFERED: "1"
-        # Sentinel-based token capture. The Python heredoc prints exactly one
-        # `SERVICE_TOKEN=<value>` line on stdout; bash extracts via a fixed
-        # prefix instead of `tail -n 1` so a future Django startup banner /
-        # deprecation warning / stray print() can't silently become "the
-        # token". stderr is intentionally NOT swallowed — if the heredoc
-        # blows up, we want the traceback in the runner logs.
+        # The Python script lives in our repo at ci/bootstrap.py — tracked,
+        # lintable, easy to extend. It prints `KEY=value` sentinel lines on
+        # stdout for each fixture we need at test time. We extract via sed
+        # pattern matching (NOT `tail -n 1`) so future Django chatter can't
+        # pollute the values. stderr is intentionally NOT swallowed.
         run: |
-          SCRIPT=$(cat <<'PY'
-          from datetime import datetime, timedelta
-          from authn.models.openid import OAuth2App
-          from users.models.user import User
-
-          user, _ = User.objects.get_or_create(
-              slug='ci',
-              defaults=dict(
-                  email='ci@example.com',
-                  full_name='CI bot',
-                  membership_platform_type=User.MEMBERSHIP_PLATFORM_PATREON,
-                  patreon_id='ci-bot',
-                  membership_started_at=datetime.utcnow(),
-                  membership_expires_at=datetime.utcnow() + timedelta(days=3650),
-                  is_email_verified=True,
-                  moderation_status=User.MODERATION_STATUS_APPROVED,
-                  roles=['god'],
-              ),
-          )
-
-          app, _ = OAuth2App.objects.get_or_create(
-              name='vas3k-mcp-ci',
-              defaults=dict(
-                  owner=user,
-                  redirect_uris='http://localhost:8788/callback',
-                  scope='openid contact',
-              ),
-          )
-          print(f"SERVICE_TOKEN={app.service_token}")
-          PY
-          )
-          out=$(python3 manage.py shell -c "$SCRIPT")
-          token=$(printf '%s\n' "$out" | sed -n 's/^SERVICE_TOKEN=//p' | head -n 1)
-          if [ -z "$token" ]; then
-            echo "Failed to mint service token; shell output was:" >&2
+          out=$(python3 manage.py shell -c "$(cat ${GITHUB_WORKSPACE}/ci/bootstrap.py)")
+          extract() { printf '%s\n' "$out" | sed -n "s/^$1=//p" | head -n 1; }
+          token=$(extract SERVICE_TOKEN)
+          post=$(extract POST_SLUG)
+          room=$(extract ROOM_SLUG)
+          friend=$(extract FRIEND_SLUG)
+          if [ -z "$token" ] || [ -z "$post" ] || [ -z "$room" ] || [ -z "$friend" ]; then
+            echo "Failed to extract one or more fixtures. Shell output was:" >&2
             printf '%s\n' "$out" >&2
             exit 1
           fi
           echo "::add-mask::$token"
-          echo "service_token=$token" >> "$GITHUB_OUTPUT"
+          {
+            echo "service_token=$token"
+            echo "post_slug=$post"
+            echo "room_slug=$room"
+            echo "friend_slug=$friend"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Start Django dev server
         working-directory: vas3k.club
@@ -218,6 +195,9 @@ jobs:
         env:
           VAS3K_BASE_URL: http://localhost:8000
           VAS3K_SERVICE_TOKEN: ${{ steps.bootstrap.outputs.service_token }}
+          VAS3K_TEST_POST_SLUG: ${{ steps.bootstrap.outputs.post_slug }}
+          VAS3K_TEST_ROOM_SLUG: ${{ steps.bootstrap.outputs.room_slug }}
+          VAS3K_TEST_FRIEND_SLUG: ${{ steps.bootstrap.outputs.friend_slug }}
         run: pnpm test
 
       - name: Upload Django log on failure
