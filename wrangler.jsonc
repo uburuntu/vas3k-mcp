@@ -1,0 +1,40 @@
+/**
+ * Cloudflare Worker configuration for the hosted vas3k.club MCP server.
+ *
+ * Before first deploy, run:
+ *   wrangler kv namespace create OAUTH_KV          # paste id below
+ *   wrangler secret put VAS3K_CLIENT_ID
+ *   wrangler secret put VAS3K_CLIENT_SECRET
+ *   wrangler secret put COOKIE_ENCRYPTION_KEY      # any random 32+ byte hex string
+ *
+ * docs: https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "vas3k-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-04-15",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+
+  "vars": {
+    "VAS3K_BASE_URL": "https://vas3k.club"
+  },
+
+  "routes": [{ "pattern": "vas3k-mcp.rmbk.me", "custom_domain": true }],
+
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["MyMCP"] },
+    { "tag": "v2", "new_sqlite_classes": ["MyMCPFull"] }
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "class_name": "MyMCP", "name": "MCP_OBJECT" },
+      { "class_name": "MyMCPFull", "name": "MCP_OBJECT_FULL" }
+    ]
+  },
+  // Binding name MUST be `OAUTH_KV` — `@cloudflare/workers-oauth-provider`
+  // hardcodes that lookup. The dashboard title (`vas3k-mcp-oauth`) stays.
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "83bce296a0d0431da4765e6801118983" }],
+  "observability": { "enabled": true },
+  "dev": { "port": 8788 }
+}

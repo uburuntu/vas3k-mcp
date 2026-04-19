@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Pinning policy:
+#   • Third-party actions (cloudflare/, pnpm/, astral-sh/) are pinned to a
+#     full 40-char commit SHA with the version as a trailing comment. A tag
+#     re-point on these would otherwise ship attacker-controlled code into a
+#     job that may hold CLOUDFLARE_API_TOKEN. Dependabot bumps the SHAs
+#     weekly (see .github/dependabot.yml).
+#   • GitHub-owned actions (actions/checkout, actions/setup-node, etc.) are
+#     left at floating major tags (@v6). They're maintained by GitHub, so the
+#     supply-chain risk is materially lower, and constant SHA churn would
+#     create review friction that outweighs the marginal hardening.
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (biome)
+        run: pnpm lint
+
+      - name: Type-check
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Wrangler dry-run deploy
+        run: pnpm exec wrangler deploy --dry-run --outdir=dist
+        env:
+          # placeholder so wrangler doesn't bail on missing KV id during dry-run
+          CLOUDFLARE_API_TOKEN: dry-run

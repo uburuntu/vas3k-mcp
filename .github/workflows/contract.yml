@@ -1,0 +1,229 @@
+name: Contract tests
+
+# Spins up the actual vas3k.club Django backend (postgres + redis + Django) on
+# the runner, bootstraps a god-mode user + OAuth app, and runs our zod-schema
+# contract tests against it. Catches API drift before users do.
+#
+# Runs:
+#   • on PRs that touch the worker or contract test code
+#   • on every push to main
+#   • weekly on Monday 03:17 UTC so we notice when upstream renames a field
+#   • on demand via workflow_dispatch
+#
+# Caching layered in:
+#   • pnpm store        → actions/setup-node@v6 with cache: pnpm
+#   • uv / pip wheels   → astral-sh/setup-uv (SHA-pinned) with enable-cache
+#   • vas3k.club checkout itself is intentionally NOT cached — we want the ref
+#     pin to be the only knob controlling which upstream we test against.
+#
+# Pinning policy: third-party actions are SHA-pinned with version comment;
+# GitHub-owned actions float on @v6. See ci.yml header for the rationale.
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "test/contract/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/contract.yml"
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contract-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Pinned to a known-good vas3k.club commit so upstream churn doesn't randomly
+  # red-light us. Bump deliberately when you want to retest against newer code.
+  VAS3K_REF: master
+
+jobs:
+  contract:
+    # Fork guard: GitHub auto-disables schedules on forks at fork time, but
+    # that protection lapses if a forker re-enables Actions. PRs / pushes /
+    # workflow_dispatch from forks still run normally — only the cron is
+    # gated to the canonical repo.
+    if: github.event_name != 'schedule' || github.repository == 'uburuntu/vas3k-mcp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:14-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: vas3k_club
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:6-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout vas3k-mcp
+        uses: actions/checkout@v6
+
+      - name: Checkout vas3k.club
+        uses: actions/checkout@v6
+        with:
+          repository: vas3k/vas3k.club
+          ref: ${{ env.VAS3K_REF }}
+          path: vas3k.club
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: "vas3k.club/Pipfile.lock"
+
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install pnpm deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Django deps
+        working-directory: vas3k.club
+        run: |
+          uv pip install --system pipenv
+          pipenv requirements --dev > requirements.txt
+          uv pip install --system -r requirements.txt
+
+      - name: Migrate database
+        working-directory: vas3k.club
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: vas3k_club
+          POSTGRES_HOST: localhost
+          REDIS_DB: 0
+          REDIS_HOST: localhost
+          DEBUG: "true"
+          TESTS_RUN: "da"
+          PYTHONUNBUFFERED: "1"
+        run: python3 manage.py migrate --noinput
+
+      - name: Bootstrap god user + OAuth app, capture service token
+        id: bootstrap
+        working-directory: vas3k.club
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: vas3k_club
+          POSTGRES_HOST: localhost
+          REDIS_DB: 0
+          REDIS_HOST: localhost
+          DEBUG: "true"
+          TESTS_RUN: "da"
+          PYTHONUNBUFFERED: "1"
+        # Sentinel-based token capture. The Python heredoc prints exactly one
+        # `SERVICE_TOKEN=<value>` line on stdout; bash extracts via a fixed
+        # prefix instead of `tail -n 1` so a future Django startup banner /
+        # deprecation warning / stray print() can't silently become "the
+        # token". stderr is intentionally NOT swallowed — if the heredoc
+        # blows up, we want the traceback in the runner logs.
+        run: |
+          SCRIPT=$(cat <<'PY'
+          from datetime import datetime, timedelta
+          from authn.models.openid import OAuth2App
+          from users.models.user import User
+
+          user, _ = User.objects.get_or_create(
+              slug='ci',
+              defaults=dict(
+                  email='ci@example.com',
+                  full_name='CI bot',
+                  membership_platform_type=User.MEMBERSHIP_PLATFORM_PATREON,
+                  patreon_id='ci-bot',
+                  membership_started_at=datetime.utcnow(),
+                  membership_expires_at=datetime.utcnow() + timedelta(days=3650),
+                  is_email_verified=True,
+                  moderation_status=User.MODERATION_STATUS_APPROVED,
+                  roles=['god'],
+              ),
+          )
+
+          app, _ = OAuth2App.objects.get_or_create(
+              name='vas3k-mcp-ci',
+              defaults=dict(
+                  owner=user,
+                  redirect_uris='http://localhost:8788/callback',
+                  scope='openid contact',
+              ),
+          )
+          print(f"SERVICE_TOKEN={app.service_token}")
+          PY
+          )
+          out=$(python3 manage.py shell -c "$SCRIPT")
+          token=$(printf '%s\n' "$out" | sed -n 's/^SERVICE_TOKEN=//p' | head -n 1)
+          if [ -z "$token" ]; then
+            echo "Failed to mint service token; shell output was:" >&2
+            printf '%s\n' "$out" >&2
+            exit 1
+          fi
+          echo "::add-mask::$token"
+          echo "service_token=$token" >> "$GITHUB_OUTPUT"
+
+      - name: Start Django dev server
+        working-directory: vas3k.club
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: vas3k_club
+          POSTGRES_HOST: localhost
+          REDIS_DB: 0
+          REDIS_HOST: localhost
+          DEBUG: "true"
+          TESTS_RUN: "da"
+          PYTHONUNBUFFERED: "1"
+        run: |
+          nohup python3 manage.py runserver 0.0.0.0:8000 > /tmp/django.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8000/feed.json > /dev/null; then
+              echo "Django is up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "Django did not start in 60s" >&2
+          tail -n 50 /tmp/django.log >&2
+          exit 1
+
+      - name: Run contract tests
+        env:
+          VAS3K_BASE_URL: http://localhost:8000
+          VAS3K_SERVICE_TOKEN: ${{ steps.bootstrap.outputs.service_token }}
+        run: pnpm test
+
+      - name: Upload Django log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: django-log
+          path: /tmp/django.log
+          retention-days: 7

@@ -1,0 +1,64 @@
+name: Deploy
+
+# Operator note: workflow_file alone CANNOT enforce manual approval. Configure
+# "Required reviewers" on the GitHub `production` environment in repo Settings
+# → Environments → production → Protection rules. Without that rule, every
+# main-push that matches the paths filter below ships to prod automatically.
+# See README.md "## CI / CD" for the UI walkthrough.
+
+on:
+  push:
+    branches: [main]
+    # README/docs-only commits should not redeploy. Keep workflow_dispatch as
+    # the escape hatch when you want to force a no-op redeploy.
+    paths:
+      - "src/**"
+      - "wrangler.jsonc"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+# Third-party actions are SHA-pinned (see ci.yml header comment for rationale).
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://vas3k-mcp.rmbk.me
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type-check
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3.15.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          packageManager: pnpm
+          command: deploy

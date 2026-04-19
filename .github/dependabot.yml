@@ -1,0 +1,25 @@
+# Dependabot keeps third-party action SHA pins fresh and watches npm deps.
+# See .github/workflows/ci.yml header comment for the SHA-pinning policy.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci(deps)"
+
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "deps"
+    groups:
+      # Roll all minor + patch bumps into a single PR each week to keep
+      # review noise down. Major bumps still arrive as individual PRs so
+      # they get scrutinised one at a time.
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
