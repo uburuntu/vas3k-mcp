@@ -26,7 +26,15 @@ app.get("/", (c) => {
 });
 
 app.get("/authorize", async (c) => {
-  const oauthReqInfo = await c.env.OAUTH_PROVIDER.parseAuthRequest(c.req.raw);
+  // OAuthProvider throws on bad PKCE / unsupported response_type / etc.
+  // Hono would render those as 500; OAuth spec wants 400 on malformed
+  // authorize requests, so wrap and surface as text/plain.
+  let oauthReqInfo: Awaited<ReturnType<typeof c.env.OAUTH_PROVIDER.parseAuthRequest>>;
+  try {
+    oauthReqInfo = await c.env.OAUTH_PROVIDER.parseAuthRequest(c.req.raw);
+  } catch (err) {
+    return c.text(`OAuth authorize request rejected: ${(err as Error).message}`, 400);
+  }
   if (!oauthReqInfo.clientId) {
     return c.text("Invalid request", 400);
   }
@@ -76,7 +84,9 @@ form{margin-top:1.5rem}</style></head>
   <li>читать твой профиль и контакты</li>
   <li>читать посты, комментарии и ленту, которые видишь ты</li>
   <li>искать людей и теги</li>
+  <li>если приложение использует <code>/mcp-full</code> — ставить лайки, букмарки, дружбы и подписки от твоего имени</li>
 </ul>
+<p>На следующем экране Клуб формально скажет «приложение не сможет писать посты и комментарии» — это правда: создавать посты или писать комментарии через MCP нельзя. Действия выше (лайки, букмарки и подписки) идут через API и в это ограничение не попадают.</p>
 <p>Отозвать доступ можно в любой момент на <a href="https://vas3k.club/apps/">vas3k.club/apps/</a>.</p>
 <form method="POST" action="/authorize">
   <input type="hidden" name="state" value="${state}" />

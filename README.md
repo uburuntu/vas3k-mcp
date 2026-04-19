@@ -31,7 +31,7 @@ Add this to your MCP client config (Claude Desktop, Claude Code, Cursor, …):
 {
   "mcpServers": {
     "vas3k": {
-      "url": "https://vas3k-mcp.rmbk.workers.dev/mcp"
+      "url": "https://vas3k-mcp.rmbk.me/mcp"
     }
   }
 }
@@ -233,19 +233,18 @@ cover the API-token flow used here; check the Cloudflare dashboard (My
 Profile → API Tokens) for the OIDC trust-policy UI when you're ready to
 migrate.
 
-### Self-hosters: dynamic client registration is disabled
+### Self-hosters: DCR is open, hardened by CIMD + consent UI
 
-The worker sets `disallowPublicClientRegistration: true` on the
-`OAuthProvider`, so `POST /register` (RFC 7591 dynamic client registration)
-no longer mints clients on demand. This closes a phishing / KV-spam surface
-but means MCP clients (Claude Desktop, Claude Code, Cursor, …) must be
-**pre-registered** out-of-band before they can authorize. Use
-`OAuthProvider.createClient` from
-[`@cloudflare/workers-oauth-provider`](https://github.com/cloudflare/workers-oauth-provider)
-inside a one-shot admin route or a deploy-time script to register each
-client; persist the resulting `clientId` / `clientSecret` and hand them to
-the MCP client config. The hosted instance maintained at
-`vas3k-mcp.rmbk.me` already has the common clients pre-registered.
+The worker keeps RFC 7591 dynamic client registration **enabled** (the MCP
+spec requires it; disabling it locks out MCP Inspector / Claude Desktop /
+Cursor). To keep the phishing surface manageable, the worker sets
+`clientIdMetadataDocumentEnabled: true` (so well-behaved clients can use a
+stable HTTPS URL as their `client_id`) and the `/authorize` consent screen
+explicitly warns that the application name is self-declared by the
+registering client and surfaces both the `client_id` and `redirect_uri`
+verbatim. If you want to lock down further on a private deploy, set
+`disallowPublicClientRegistration: true` in `src/index.ts` and pre-register
+each client via `OAuthProvider.createClient`.
 
 ## License
 
