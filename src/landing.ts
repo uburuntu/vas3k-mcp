@@ -150,15 +150,63 @@ main {
   flex-shrink: 0;
   position: relative;
   z-index: 1;
+  perspective: 1000px;
 }
 .hero-art img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-  border-radius: 22px;
-  /* Soft yellow halo behind the image — picks up the badge accent */
+
+  /* Apple-icon-style squircle (figma-squircle superellipse, ~22.5 corner)
+     applied as an SVG mask so the silhouette is a true superellipse, not
+     just a high-radius rounded rect. */
+  --squircle: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path fill='black' d='M0,50 C0,24 0,12 7.5,7.5 C12,0 24,0 50,0 C76,0 88,0 92.5,7.5 C100,12 100,24 100,50 C100,76 100,88 92.5,92.5 C88,100 76,100 50,100 C24,100 12,100 7.5,92.5 C0,88 0,76 0,50 Z'/></svg>");
+  -webkit-mask-image: var(--squircle);
+          mask-image: var(--squircle);
+  -webkit-mask-size: 100% 100%;
+          mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+
+  /* Soft yellow halo — drop-shadow follows the post-mask silhouette. */
   filter: drop-shadow(0 18px 32px rgba(255, 196, 85, 0.28));
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+              filter 0.45s ease;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-drag: none;
+  will-change: transform;
+}
+/* Card-like 3D tilt on hover — lifts toward the viewer + warmer shadow. */
+.hero-art:hover img {
+  transform: scale(1.05) rotateX(-6deg) rotateY(8deg);
+  filter: drop-shadow(-12px 30px 42px rgba(255, 196, 85, 0.45));
+}
+/* "Press" feel on click — tactile recoil. */
+.hero-art:active img {
+  transform: scale(0.97) rotateX(-2deg) rotateY(2deg);
+  transition-duration: 0.12s;
+}
+/* Easter egg: triple-click toggles .spin via the tiny script at end of body. */
+.hero-art img.spin {
+  animation: heroSpin 0.9s cubic-bezier(0.4, 0.05, 0.2, 0.95);
+}
+@keyframes heroSpin {
+  0%   { transform: scale(1)    rotate(0deg);   }
+  35%  { transform: scale(1.12) rotate(120deg); }
+  70%  { transform: scale(1.12) rotate(280deg); }
+  100% { transform: scale(1)    rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-art img,
+  .hero-art:hover img,
+  .hero-art:active img,
+  .hero-art img.spin {
+    transition: none;
+    animation: none;
+    transform: none;
+  }
 }
 @media (max-width: 720px) {
   .hero { grid-template-columns: 1fr; gap: 18px; padding: 38px 28px 32px; }
@@ -789,6 +837,35 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
   <span class="sep">∞</span>
   <a href="https://vas3k.club/apps/" target="_blank" rel="noopener">/apps/</a>
 </footer>
+
+<script>
+// Hero easter egg: 3 clicks within 700ms → spin. The animation itself is
+// pure CSS (.hero-art img.spin → @keyframes heroSpin). This script just
+// counts clicks and toggles the class.
+(() => {
+  const art = document.querySelector('.hero-art');
+  if (!art) return;
+  const img = art.querySelector('img');
+  if (!img) return;
+  let clicks = 0;
+  let timer = null;
+  art.addEventListener('click', () => {
+    if (img.classList.contains('spin')) return;
+    clicks++;
+    clearTimeout(timer);
+    timer = setTimeout(() => { clicks = 0; }, 700);
+    if (clicks >= 3) {
+      clicks = 0;
+      img.classList.add('spin');
+      img.addEventListener(
+        'animationend',
+        () => img.classList.remove('spin'),
+        { once: true },
+      );
+    }
+  });
+})();
+</script>
 
 </body>
 </html>`;
