@@ -13,9 +13,9 @@ export const landingHtml: string = `<!doctype html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>vas3k-mcp — MCP-сервер для Клуба</title>
-<meta name="description" content="MCP-сервер для Вастрик.Клуба. Подключи свой AI-ассистент к Клубу через OAuth." />
+<meta name="description" content="MCP-сервер для Вастрик.Клуба. Подключи Клуб к AI — поиск людей, цитаты из постов, ссылки прямо в чате." />
 <meta property="og:title" content="vas3k-mcp — MCP-сервер для Клуба" />
-<meta property="og:description" content="Подключи свой AI-ассистент к Вастрик.Клубу через OAuth." />
+<meta property="og:description" content="Подключи Клуб к своему AI — чтобы умел искать людей, цитировать посты и подтягивать ссылки прямо в чате." />
 <meta property="og:type" content="website" />
 <meta property="og:image" content="https://vas3k-mcp.rmbk.me/img/og.png" />
 <meta property="og:image:width" content="1200" />
@@ -25,7 +25,7 @@ export const landingHtml: string = `<!doctype html>
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:image" content="https://vas3k-mcp.rmbk.me/img/og.png" />
 <meta name="twitter:title" content="vas3k-mcp — MCP-сервер для Клуба" />
-<meta name="twitter:description" content="Подключи свой AI-ассистент к Вастрик.Клубу через OAuth." />
+<meta name="twitter:description" content="Подключи Клуб к своему AI — чтобы умел искать людей, цитировать посты и подтягивать ссылки прямо в чате." />
 <meta name="theme-color" content="#FCFDFF" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#282c35" media="(prefers-color-scheme: dark)" />
 <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="32x32" />
@@ -764,7 +764,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
     <div class="hero-text">
       <span class="hero-tag">🤖 MCP × 🥑 Вастрик.Клуб</span>
       <h1>MCP-сервер<br />для Клуба</h1>
-      <p>Подключи свой AI-ассистент к Клубу по OAuth — пусть читает посты, ищет людей и копается в ленте, пока ты варишь кофе.</p>
+      <p>Подключи Клуб к своему AI — чтобы умел искать людей, цитировать посты и подтягивать ссылки прямо в чате.</p>
       <div class="hero-cta">
         <a href="#подключить" class="button">Как подключить →</a>
         <a href="https://github.com/uburuntu/vas3k-mcp" class="button button-ghost" target="_blank" rel="noopener">GitHub</a>
