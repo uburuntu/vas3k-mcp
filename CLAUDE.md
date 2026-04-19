@@ -121,18 +121,18 @@ Release flow:
    - Move `[Unreleased]` content under a new `[X.Y.Z] - YYYY-MM-DD` heading.
    - Bump `VERSION` and `package.json`'s `version`.
    - Update the bottom-of-file compare links in `CHANGELOG.md`.
-   - Commit (`chore: release X.Y.Z`).
-3. Tag and push:
-   ```sh
-   git tag "v$(cat VERSION)" && git push origin "v$(cat VERSION)"
-   ```
-4. Create the GitHub release with the changelog section as the body:
-   ```sh
-   gh release create "v$(cat VERSION)" \
-     --notes "$(awk "/^## \\[$(cat VERSION)\\]/{flag=1;next}/^## \\[/{flag=0}flag" CHANGELOG.md)"
-   ```
+   - Commit (`chore: release X.Y.Z`) and push to `main`.
 
-The deploy workflow does NOT gate on `VERSION` — `main` is what ships. Tagging is bookkeeping for humans, forks, and the GitHub Releases page.
+That's it. `.github/workflows/release.yml` watches for `VERSION`-file changes on `main`, creates the `vX.Y.Z` tag at the head commit, and posts a GitHub release with the matching `CHANGELOG.md` section as the body. The workflow is idempotent — re-runs no-op if the release already exists.
+
+If the auto-fire misses (e.g. you fixed something post-bump and squashed VERSION into an unrelated commit, or you need to recreate a release), trigger manually:
+
+```sh
+gh workflow run release.yml                          # uses VERSION file
+gh workflow run release.yml -f version=1.2.3         # explicit
+```
+
+The deploy workflow does NOT gate on `VERSION` — `main` is what ships. Tagging is purely bookkeeping for humans, forks, and the GitHub Releases page.
 
 ## Things to avoid
 

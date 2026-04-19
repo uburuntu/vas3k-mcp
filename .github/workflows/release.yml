@@ -1,0 +1,89 @@
+name: Release
+
+# Watches for VERSION-file changes on main and creates the matching
+# GitHub release. Release notes come from the CHANGELOG.md section
+# whose heading matches the version. workflow_dispatch lets you trigger
+# manually (e.g. if you bumped VERSION in a commit that didn't fire the
+# paths filter, or to recreate a release).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - VERSION
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (defaults to contents of VERSION)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # gh release create needs to know the full git history so it can
+          # tag at the current commit cleanly.
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION=$(tr -d '[:space:]' < VERSION)
+          fi
+          if [ -z "$VERSION" ]; then
+            echo "::error::VERSION is empty"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved tag: v$VERSION"
+
+      - name: Check if release already exists
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "Release ${{ steps.version.outputs.tag }} already exists; nothing to do."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Extract changelog notes
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          awk -v ver="${{ steps.version.outputs.version }}" \
+            'BEGIN{pat="^## \\["ver"\\]"} $0 ~ pat {flag=1;next} /^## \[/{flag=0} flag' \
+            CHANGELOG.md > /tmp/release-notes.md
+          if [ ! -s /tmp/release-notes.md ]; then
+            echo "::error::No CHANGELOG.md section for ${{ steps.version.outputs.version }} — add one before bumping VERSION"
+            exit 1
+          fi
+          echo "::group::Release notes preview"
+          cat /tmp/release-notes.md
+          echo "::endgroup::"
+
+      - name: Create release
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "${{ steps.version.outputs.tag }}" \
+            --notes-file /tmp/release-notes.md \
+            --target "${{ github.sha }}"
