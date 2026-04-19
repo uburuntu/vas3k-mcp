@@ -660,15 +660,16 @@ main {
 .connection-builder .write-toggle-input:checked ~ .builder .read-snippet { display: none; }
 .connection-builder .write-toggle-input:checked ~ .builder .write-snippet { display: block; }
 
-/* Agent hint at the end of "Как подключить" — points at /install.md. */
+/* Agent hint at the end of "Как подключить" — points at /install.md.
+   Yellow-tinted callout (vs the muted gray of the client list above)
+   so it reads as a distinct aside, not a continuation. */
 .agent-hint {
-  margin-top: 40px;
-  padding: 16px 20px;
-  background: rgba(0, 0, 0, 0.04);
-  border: 1px dashed var(--hairline);
+  margin-top: 64px;
+  padding: 18px 22px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-strong);
   border-radius: 12px;
   font-size: 14px;
-  opacity: 0.85;
 }
 @media (prefers-color-scheme: dark) {
   .agent-hint { background: rgba(255, 255, 255, 0.04); }
