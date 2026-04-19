@@ -13,19 +13,22 @@ provider.
 
 ## Two ways to use it
 
-| | **Hosted** (recommended) | **Self-hosted** |
+There's a public deployment at **`https://vas3k-mcp.rmbk.me`** that I run for
+my own use and don't promise any uptime / SLA / scale on. If you find it
+useful, great; if you'd rather control the infra, deploying your own copy
+takes ~10 minutes on Cloudflare's free tier.
+
+| | **Public deployment** | **Your own copy** |
 | --- | --- | --- |
-| Setup | Paste a URL into Claude. Done. | Fork → register a vas3k.club app → push 3 secrets → `pnpm deploy`. ~10 min. |
+| Setup | Paste a URL into Claude. Done. | Fork → register a vas3k.club app → push 3 secrets → `pnpm deploy`. |
 | Cost | Free | Free (Cloudflare's generous tier) |
-| Trust | You trust this repo's maintainer to handle refresh tokens responsibly. Tokens are encrypted with a per-deployment key inside KV; nobody sees the raw vas3k.club bearer. | Only you. Tokens never leave your account. |
-| Privacy | Maintainer can see request volume + endpoint patterns (not response bodies; CF logs are off by default). | Same data, but only you see it. |
-| Reliability | One shared CF deployment. If it goes down, everyone is out. Single shared rate-limit budget against vas3k.club. | Yours. Your own rate-limit budget. |
+| Trust | You trust *me* (the repo author) to not poke at refresh tokens. They're encrypted with a per-deployment key in KV, but encryption isn't a substitute for trust. | Only you. Tokens never leave your account. |
+| Reliability | Best-effort. One shared CF deployment, single shared rate-limit budget vs vas3k.club. May disappear without notice. | Yours. Independent rate-limit. |
 | Updates | Auto-deployed from `main`. | You `git pull && pnpm deploy`. |
-| Customisation | None — it's the upstream code. | Fork freely. |
 
-### Hosted
+### Public deployment
 
-Add this to your MCP client config (Claude Desktop, Claude Code, Cursor, …):
+Add to your MCP client config:
 
 ```jsonc
 {
@@ -41,7 +44,7 @@ On first connect the client opens a browser → vas3k.club asks you to sign in
 and approve → you're back with a working session. Revoke any time at
 <https://vas3k.club/apps/>.
 
-### Self-hosted
+### Your own copy
 
 See [Self-host on Cloudflare Workers](#self-host-on-cloudflare-workers) below.
 
