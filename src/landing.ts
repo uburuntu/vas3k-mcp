@@ -13,9 +13,9 @@ export const landingHtml: string = `<!doctype html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>vas3k-mcp — MCP-сервер для Клуба</title>
-<meta name="description" content="MCP-сервер для Вастрик.Клуба. Подключи Claude, Cursor и других AI-ассистентов к Клубу через OAuth." />
+<meta name="description" content="MCP-сервер для Вастрик.Клуба. Подключи свой AI-ассистент к Клубу через OAuth." />
 <meta property="og:title" content="vas3k-mcp — MCP-сервер для Клуба" />
-<meta property="og:description" content="Подключи Claude, Cursor и других AI-ассистентов к Вастрик.Клубу через OAuth." />
+<meta property="og:description" content="Подключи свой AI-ассистент к Вастрик.Клубу через OAuth." />
 <meta property="og:type" content="website" />
 <meta property="og:image" content="https://vas3k-mcp.rmbk.me/img/og.png" />
 <meta property="og:image:width" content="1200" />
@@ -25,7 +25,7 @@ export const landingHtml: string = `<!doctype html>
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:image" content="https://vas3k-mcp.rmbk.me/img/og.png" />
 <meta name="twitter:title" content="vas3k-mcp — MCP-сервер для Клуба" />
-<meta name="twitter:description" content="Подключи Claude, Cursor и других AI-ассистентов к Вастрик.Клубу через OAuth." />
+<meta name="twitter:description" content="Подключи свой AI-ассистент к Вастрик.Клубу через OAuth." />
 <meta name="theme-color" content="#FCFDFF" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#282c35" media="(prefers-color-scheme: dark)" />
 <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="32x32" />
@@ -764,7 +764,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
     <div class="hero-text">
       <span class="hero-tag">🤖 MCP × 🥑 Вастрик.Клуб</span>
       <h1>MCP-сервер<br />для Клуба</h1>
-      <p>Подключи Claude, ChatGPT и других AI-ассистентов к Клубу по OAuth — пусть читают посты, ищут людей и копаются в ленте, пока ты варишь кофе.</p>
+      <p>Подключи свой AI-ассистент к Клубу по OAuth — пусть читает посты, ищет людей и копается в ленте, пока ты варишь кофе.</p>
       <div class="hero-cta">
         <a href="#подключить" class="button">Как подключить →</a>
         <a href="https://github.com/uburuntu/vas3k-mcp" class="button button-ghost" target="_blank" rel="noopener">GitHub</a>
@@ -782,7 +782,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
     </p>
     <p>На практике:</p>
     <ul class="examples">
-      <li><strong>Дайджест за неделю.</strong> «Что я пропустил в Клубе за неделю?» — Claude тянет свежие посты из нужных лент, фильтрует по твоим тегам и собирает короткий пересказ.</li>
+      <li><strong>Дайджест за неделю.</strong> «Что я пропустил в Клубе за неделю?» — AI тянет свежие посты из нужных лент, фильтрует по твоим тегам и собирает короткий пересказ.</li>
       <li><strong>Поиск своих.</strong> «Кто в Клубе пишет про Rust в проде?» — поиск по людям и тегам в один заход.</li>
       <li><strong>Длинный тред.</strong> «Перескажи спор в комментариях вот этого поста» — Markdown поста плюс ветка обсуждения.</li>
     </ul>
@@ -796,7 +796,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
     <label for="write-toggle" class="write-toggle">
       <span class="write-toggle-track"><span class="write-toggle-knob"></span></span>
       <span class="write-toggle-text">
-        <strong>Разрешить действия от твоего имени</strong>
+        <strong>Разрешать действия от твоего имени</strong>
         <span class="write-toggle-sub">лайки, закладки, подписки, друзья, теги</span>
       </span>
       <span class="write-toggle-badge"><span class="read-url">/mcp</span><span class="write-url">/mcp-full</span></span>

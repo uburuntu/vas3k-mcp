@@ -24,7 +24,7 @@ takes ~10 minutes on Cloudflare's free tier.
 
 | | **Public deployment** | **Your own copy** |
 | --- | --- | --- |
-| Setup | Paste a URL into Claude. Done. | Fork → register a vas3k.club app → push 3 secrets → `make deploy`. |
+| Setup | Paste a URL into your MCP client. Done. | Fork → register a vas3k.club app → push 3 secrets → `make deploy`. |
 | Cost | Free | Free (Cloudflare's generous tier) |
 | Trust | You trust *me* (the repo author) to not poke at refresh tokens. They're encrypted with a per-deployment key in KV, but encryption isn't a substitute for trust. | Only you. Tokens never leave your account. |
 | Reliability | Best-effort. One shared CF deployment, single shared rate-limit budget vs vas3k.club. May disappear without notice. | Yours. Independent rate-limit. |
