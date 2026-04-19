@@ -762,7 +762,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
 
   <section class="hero">
     <div class="hero-text">
-      <span class="hero-tag">🤖 MCP × 🥑 Вастрик.Клуб</span>
+      <span class="hero-tag">✖️ Вастрик.Клуб MCP</span>
       <h1>MCP-сервер<br />для Клуба</h1>
       <p>Подключи Клуб к своему AI — чтобы умел искать людей, цитировать посты и подтягивать ссылки прямо в чате.</p>
       <div class="hero-cta">
