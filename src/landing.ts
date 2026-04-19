@@ -17,13 +17,14 @@ export const landingHtml: string = `<!doctype html>
 <meta property="og:title" content="vas3k-mcp — MCP-сервер для Клуба" />
 <meta property="og:description" content="Подключи Клуб к своему AI — чтобы умел искать людей, цитировать посты и подтягивать ссылки прямо в чате." />
 <meta property="og:type" content="website" />
-<meta property="og:image" content="https://vas3k-mcp.rmbk.me/img/og.png" />
-<meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
+<meta property="og:image" content="https://vas3k-mcp.rmbk.me/img/cover.jpeg" />
+<meta property="og:image:width" content="2886" />
+<meta property="og:image:height" content="1344" />
+<meta property="og:image:type" content="image/jpeg" />
 <meta property="og:url" content="https://vas3k-mcp.rmbk.me/" />
 <meta property="og:locale" content="ru_RU" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:image" content="https://vas3k-mcp.rmbk.me/img/og.png" />
+<meta name="twitter:image" content="https://vas3k-mcp.rmbk.me/img/cover.jpeg" />
 <meta name="twitter:title" content="vas3k-mcp — MCP-сервер для Клуба" />
 <meta name="twitter:description" content="Подключи Клуб к своему AI — чтобы умел искать людей, цитировать посты и подтягивать ссылки прямо в чате." />
 <meta name="theme-color" content="#FCFDFF" media="(prefers-color-scheme: light)" />

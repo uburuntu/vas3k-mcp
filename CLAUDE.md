@@ -18,7 +18,6 @@ make dev               # wrangler dev on http://127.0.0.1:8788
 make ci                # typecheck + lint + test (the pre-push hook also runs this)
 make deploy            # ci → wrangler deploy (Cloudflare prod)
 make format            # biome --write
-make images            # re-encode source PNGs at repo root → public/img/*.{webp,png}
 ```
 
 Run a single test: `pnpm exec vitest run path/to/file.test.ts -t "test name substring"`.

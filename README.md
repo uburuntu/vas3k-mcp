@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/img/readme-hero.webp" alt="vas3k-mcp — MCP-сервер для Клуба" width="900" />
+  <img src="public/img/cover.jpeg" alt="vas3k-mcp — MCP-сервер для Клуба" width="900" />
 </p>
 
 # vas3k-mcp
