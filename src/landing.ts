@@ -12,9 +12,9 @@ export const landingHtml: string = `<!doctype html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>vas3k-mcp — MCP-сервер для Клуба</title>
+<title>MCP-сервер для Вастрик.Клуба</title>
 <meta name="description" content="MCP-сервер для Клуба. Подключи Клуб к AI — поиск людей, цитаты из постов, ссылки прямо в чате." />
-<meta property="og:title" content="vas3k-mcp — MCP-сервер для Клуба" />
+<meta property="og:title" content="MCP-сервер для Вастрик.Клуба" />
 <meta property="og:description" content="Подключи Клуб к своему AI — чтобы умел искать людей, цитировать посты и подтягивать ссылки прямо в чате." />
 <meta property="og:type" content="website" />
 <meta property="og:image" content="https://vas3k-mcp.rmbk.me/img/cover.jpeg" />
@@ -25,7 +25,7 @@ export const landingHtml: string = `<!doctype html>
 <meta property="og:locale" content="ru_RU" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:image" content="https://vas3k-mcp.rmbk.me/img/cover.jpeg" />
-<meta name="twitter:title" content="vas3k-mcp — MCP-сервер для Клуба" />
+<meta name="twitter:title" content="MCP-сервер для Вастрик.Клуба" />
 <meta name="twitter:description" content="Подключи Клуб к своему AI — чтобы умел искать людей, цитировать посты и подтягивать ссылки прямо в чате." />
 <meta name="theme-color" content="#FCFDFF" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#282c35" media="(prefers-color-scheme: dark)" />
