@@ -20,7 +20,7 @@ export const MAX_ACCESS_TOKEN_TTL_SECONDS = 24 * 3600;
 
 /** McpServer identity. Bump version when registered tools change shape. */
 export const MCP_SERVER_NAME = "vas3k-club";
-export const MCP_SERVER_VERSION = "1.0.0";
+export const MCP_SERVER_VERSION = "1.1.0";
 
 /** User-Agent on outbound requests to vas3k.club. Track project version. */
 export const USER_AGENT = `vas3k-mcp/${MCP_SERVER_VERSION}`;

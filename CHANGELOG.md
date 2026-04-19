@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-04-20
+
+First-class MCP polish — structured outputs, accurate annotations, and an agent-friendly description rewrite.
+
+### Added
+
+- **Structured tool output**: every read and write tool now ships an `outputSchema`. Responses arrive as typed `structuredContent` the model can parse directly instead of opaque JSON text.
+- **Tool titles**: every tool has a human-readable display name distinct from its machine name (e.g. `get_user` → "Member profile"), surfaced in the tools list of MCP-aware clients.
+- **Resources**: `vas3k://me` (live profile of the authenticated member, pinnable as ambient session context) and `vas3k://about` (server capability cheatsheet).
+- **Prompt template** `weekly_digest` — guided "what happened in the club this week" walk, with optional `post_type` filter and `focus` topic argument.
+
+### Changed
+
+- Tool descriptions rewritten for AI agents — each one explains when to call the tool, what's in the response, and which fields chain into other tools (e.g. "use search_users first to find a slug").
+- Per-tool annotation accuracy pass: writes now report `destructiveHint` / `idempotentHint` per their actual semantics (additive-idempotent for upvotes, destructive-idempotent for retracts, destructive-non-idempotent for toggles). MCP-aware clients use these to decide whether to confirm before calling and whether retry is safe.
+
 ## [1.0.0] - 2026-04-19
 
 Public-launch polish.
@@ -45,6 +61,7 @@ Public-launch polish.
 - Dependabot configuration for `github-actions` and `npm` ecosystems with weekly schedules; minor + patch npm bumps grouped to keep review noise down.
 - Custom production domain at [vas3k-mcp.rmbk.me](https://vas3k-mcp.rmbk.me).
 
-[Unreleased]: https://github.com/uburuntu/vas3k-mcp/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/uburuntu/vas3k-mcp/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/uburuntu/vas3k-mcp/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/uburuntu/vas3k-mcp/releases/tag/v0.1.0

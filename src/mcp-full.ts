@@ -21,29 +21,95 @@
  * profile-tag toggle). The form-based ones (`create_comment`, `edit_post`,
  * `delete_post`, badge/payment) return HTML+redirects, so wrapping them
  * needs more plumbing — left for a future pass.
+ *
+ * Tool annotation taxonomy
+ * ------------------------
+ * Every write tool sets all four standard hints. Three buckets cover the
+ * surface — pick the constant that matches the tool's semantics:
+ *
+ *   ADDITIVE_IDEMPOTENT  — pure setter, never removes data.
+ *                          Examples: upvote_post, upvote_comment.
+ *                          { readOnlyHint:false, destructiveHint:false,
+ *                            idempotentHint:true,  openWorldHint:true }
+ *
+ *   DESTRUCTIVE_IDEMPOTENT — pure remover, takes data away but re-running
+ *                            with the same args has no extra effect.
+ *                          Examples: retract_post_vote, retract_comment_vote.
+ *                          { readOnlyHint:false, destructiveHint:true,
+ *                            idempotentHint:true,  openWorldHint:true }
+ *
+ *   TOGGLE               — flips state each call; the off-direction call
+ *                          removes prior state, so destructiveHint is true
+ *                          and idempotentHint is false.
+ *                          Examples: bookmark_post, toggle_friend,
+ *                          subscribe_room, mute_room, toggle_profile_tag,
+ *                          toggle_post_subscription, toggle_event_participation.
+ *                          { readOnlyHint:false, destructiveHint:true,
+ *                            idempotentHint:false, openWorldHint:true }
+ *
+ * `openWorldHint:true` everywhere — we always reach an external service.
+ * Per the spec, a careful client uses `destructiveHint` to decide whether
+ * to confirm before calling, and `idempotentHint` to decide whether retry
+ * is safe.
  */
 
 import { z } from "zod";
 
 import { MyMCP } from "./mcp";
+import {
+  commentRetractResponseShape,
+  commentUpvoteResponseShape,
+  postRetractResponseShape,
+  postUpvoteResponseShape,
+  profileTagActionResponseShape,
+  toggleActionShape,
+} from "./schemas";
 import { Vas3kAPIError } from "./vas3k-client";
 
-const COMMENT_ID = z.uuid().describe("Comment UUID (from list_post_comments)");
-const SLUG = z.string().describe("URL slug — letters, digits, _ or -");
+const COMMENT_ID = z
+  .uuid()
+  .describe("Comment UUID — get it from the `id` field of any item in `list_post_comments`.");
 
-/** MCP annotations for write tools. None destructive (every action is
- * reversible via its toggle/retract counterpart); openWorldHint:true since
- * the call hits upstream vas3k.club. */
-const WRITE_ANNOTATIONS = {
+const POST_SLUG = z
+  .string()
+  .describe(
+    "Post URL slug (the trailing path segment, e.g. 'my-post' for vas3k.club/post/my-post/).",
+  );
+
+const ROOM_SLUG = z
+  .string()
+  .describe("Room slug (e.g. 'ai', 'apps', 'remote'). Browse vas3k.club/rooms/ for the full list.");
+
+const USER_SLUG = z.string().describe("Member URL slug (the handle from search_users / get_user).");
+
+const TAG_CODE = z
+  .string()
+  .describe(
+    "Tag code from search_tags (e.g. 'rust', 'kyiv'). NOT the human-readable name — use search_tags to find the canonical code.",
+  );
+
+/** Pure setter, never removes data — e.g. upvote_post. */
+const ADDITIVE_IDEMPOTENT_ANNOTATIONS = {
   readOnlyHint: false,
   destructiveHint: false,
+  idempotentHint: true,
   openWorldHint: true,
 } as const;
 
-/** Idempotent variants — upvote/retract are setters, not toggles. */
-const WRITE_ANNOTATIONS_IDEMPOTENT = {
-  ...WRITE_ANNOTATIONS,
+/** Pure remover, idempotent — e.g. retract_post_vote. */
+const DESTRUCTIVE_IDEMPOTENT_ANNOTATIONS = {
+  readOnlyHint: false,
+  destructiveHint: true,
   idempotentHint: true,
+  openWorldHint: true,
+} as const;
+
+/** Toggle — flips state each call; the off path removes prior state. */
+const TOGGLE_ANNOTATIONS = {
+  readOnlyHint: false,
+  destructiveHint: true,
+  idempotentHint: false,
+  openWorldHint: true,
 } as const;
 
 export class MyMCPFull extends MyMCP {
@@ -73,131 +139,165 @@ export class MyMCPFull extends MyMCP {
     // Inherit all read tools first.
     await super.init();
 
-    // ---------- post-level write actions ----------------------------------
+    // ---------------- post-level write actions ------------------------------
     this.server.registerTool(
       "bookmark_post",
       {
+        title: "Bookmark post (toggle)",
         description:
-          "Toggle a bookmark on a post. Adding (or removing) a bookmark; same call performs both.",
-        inputSchema: { post_slug: SLUG },
-        annotations: WRITE_ANNOTATIONS,
+          "Add this post to the user's bookmarks, or remove it if it was already bookmarked. Same call performs both — there is no separate `unbookmark_post`. Response.status is 'created' if it's now bookmarked, 'deleted' if the bookmark was just removed.",
+        inputSchema: { post_slug: POST_SLUG },
+        outputSchema: toggleActionShape,
+        annotations: TOGGLE_ANNOTATIONS,
       },
-      async ({ post_slug }) => this.wrap(() => this.writeClient().bookmarkPost(post_slug)),
+      async ({ post_slug }) =>
+        this.wrapStructured(() => this.writeClient().bookmarkPost(post_slug)),
     );
 
     this.server.registerTool(
       "upvote_post",
       {
+        title: "Upvote post",
         description:
-          "Upvote a post. Idempotent — calling twice does NOT downvote (use retract_post_vote for that).",
-        inputSchema: { post_slug: SLUG },
-        annotations: WRITE_ANNOTATIONS_IDEMPOTENT,
+          "Upvote a post. Idempotent — calling twice does NOT downvote (use retract_post_vote for that). Returns the new total upvote count plus the upvote timestamp.",
+        inputSchema: { post_slug: POST_SLUG },
+        outputSchema: postUpvoteResponseShape,
+        annotations: ADDITIVE_IDEMPOTENT_ANNOTATIONS,
       },
-      async ({ post_slug }) => this.wrap(() => this.writeClient().upvotePost(post_slug)),
+      async ({ post_slug }) => this.wrapStructured(() => this.writeClient().upvotePost(post_slug)),
     );
 
     this.server.registerTool(
       "retract_post_vote",
       {
-        description: "Retract a previously cast upvote on a post.",
-        inputSchema: { post_slug: SLUG },
-        annotations: WRITE_ANNOTATIONS_IDEMPOTENT,
+        title: "Retract post upvote",
+        description:
+          "Retract the user's upvote on a post. Idempotent — `success:false` in the response means there was no vote to retract; `success:true` means a vote was removed and the upvote count decremented.",
+        inputSchema: { post_slug: POST_SLUG },
+        outputSchema: postRetractResponseShape,
+        annotations: DESTRUCTIVE_IDEMPOTENT_ANNOTATIONS,
       },
-      async ({ post_slug }) => this.wrap(() => this.writeClient().retractPostVote(post_slug)),
+      async ({ post_slug }) =>
+        this.wrapStructured(() => this.writeClient().retractPostVote(post_slug)),
     );
 
     this.server.registerTool(
       "toggle_post_subscription",
       {
-        description: "Subscribe to (or unsubscribe from) notifications for new comments on a post.",
-        inputSchema: { post_slug: SLUG },
-        annotations: WRITE_ANNOTATIONS,
+        title: "Subscribe to post comments (toggle)",
+        description:
+          "Subscribe to email + Telegram notifications for new top-level comments on this post, or unsubscribe if already subscribed. Response.status='created' means now subscribed.",
+        inputSchema: { post_slug: POST_SLUG },
+        outputSchema: toggleActionShape,
+        annotations: TOGGLE_ANNOTATIONS,
       },
       async ({ post_slug }) =>
-        this.wrap(() => this.writeClient().togglePostSubscription(post_slug)),
+        this.wrapStructured(() => this.writeClient().togglePostSubscription(post_slug)),
     );
 
     this.server.registerTool(
       "toggle_event_participation",
       {
+        title: "RSVP to event (toggle)",
         description:
-          "For posts of type `event`: toggle whether the authenticated user is participating.",
-        inputSchema: { post_slug: SLUG },
-        annotations: WRITE_ANNOTATIONS,
+          "For posts of type `event`: mark the authenticated user as participating, or unmark them if already RSVPed. Also auto-subscribes them to the event's comments. Response.status='created' = now attending. Calling on a non-event post may fail.",
+        inputSchema: { post_slug: POST_SLUG },
+        outputSchema: toggleActionShape,
+        annotations: TOGGLE_ANNOTATIONS,
       },
       async ({ post_slug }) =>
-        this.wrap(() => this.writeClient().toggleEventParticipation(post_slug)),
+        this.wrapStructured(() => this.writeClient().toggleEventParticipation(post_slug)),
     );
 
-    // ---------- comment-level write actions ------------------------------
+    // ---------------- comment-level write actions ---------------------------
     this.server.registerTool(
       "upvote_comment",
       {
+        title: "Upvote comment",
         description:
-          "Upvote a comment by its UUID. Get the UUID from `list_post_comments`. Idempotent.",
+          "Upvote a comment by its UUID. Idempotent (re-calls don't double-count). Get the comment_id from `list_post_comments`.",
         inputSchema: { comment_id: COMMENT_ID },
-        annotations: WRITE_ANNOTATIONS_IDEMPOTENT,
+        outputSchema: commentUpvoteResponseShape,
+        annotations: ADDITIVE_IDEMPOTENT_ANNOTATIONS,
       },
-      async ({ comment_id }) => this.wrap(() => this.writeClient().upvoteComment(comment_id)),
+      async ({ comment_id }) =>
+        this.wrapStructured(() => this.writeClient().upvoteComment(comment_id)),
     );
 
     this.server.registerTool(
       "retract_comment_vote",
       {
-        description: "Retract a previously cast upvote on a comment.",
+        title: "Retract comment upvote",
+        description:
+          "Retract the user's upvote on a comment. Idempotent — `success:false` if there was no vote to retract.",
         inputSchema: { comment_id: COMMENT_ID },
-        annotations: WRITE_ANNOTATIONS_IDEMPOTENT,
+        outputSchema: commentRetractResponseShape,
+        annotations: DESTRUCTIVE_IDEMPOTENT_ANNOTATIONS,
       },
-      async ({ comment_id }) => this.wrap(() => this.writeClient().retractCommentVote(comment_id)),
+      async ({ comment_id }) =>
+        this.wrapStructured(() => this.writeClient().retractCommentVote(comment_id)),
     );
 
-    // ---------- social write actions -------------------------------------
+    // ---------------- social write actions ----------------------------------
     this.server.registerTool(
       "toggle_friend",
       {
+        title: "Friend request (toggle)",
         description:
-          "Toggle friendship with another club member. Sends or revokes a friend request.",
-        inputSchema: { user_slug: SLUG },
-        annotations: WRITE_ANNOTATIONS,
+          "Send a friend request to another member, or revoke a pending/accepted request. Response.status='created' means a request was just sent (or accepted, if mutual); 'deleted' means the existing relation was removed. Cannot friend yourself (400).",
+        inputSchema: { user_slug: USER_SLUG },
+        outputSchema: toggleActionShape,
+        annotations: TOGGLE_ANNOTATIONS,
       },
-      async ({ user_slug }) => this.wrap(() => this.writeClient().toggleFriend(user_slug)),
+      async ({ user_slug }) =>
+        this.wrapStructured(() => this.writeClient().toggleFriend(user_slug)),
     );
 
     // toggle_mute_user is intentionally absent — see Vas3kClient comment:
     // upstream `users/views/muted.py::toggle_mute` is HTML+email-only,
     // not API-shaped, so a Bearer-authed call always 500s.
 
-    // ---------- rooms ---------------------------------------------------
+    // ---------------- rooms -------------------------------------------------
     this.server.registerTool(
       "subscribe_room",
       {
-        description: "Toggle subscription to a room (e.g. `ai`, `apps`). Affects email digests.",
-        inputSchema: { room_slug: SLUG },
-        annotations: WRITE_ANNOTATIONS,
+        title: "Subscribe to room (toggle)",
+        description:
+          "Toggle subscription to a room (e.g. `ai`, `apps`, `remote`). Subscribed rooms appear in the user's email digest and are easier to find in the feed. Distinct from mute_room — a room can be subscribed AND not muted, neither, or both.",
+        inputSchema: { room_slug: ROOM_SLUG },
+        outputSchema: toggleActionShape,
+        annotations: TOGGLE_ANNOTATIONS,
       },
-      async ({ room_slug }) => this.wrap(() => this.writeClient().subscribeRoom(room_slug)),
+      async ({ room_slug }) =>
+        this.wrapStructured(() => this.writeClient().subscribeRoom(room_slug)),
     );
 
     this.server.registerTool(
       "mute_room",
       {
-        description: "Toggle muting a room. Muted rooms don't appear in the main feed.",
-        inputSchema: { room_slug: SLUG },
-        annotations: WRITE_ANNOTATIONS,
+        title: "Mute room (toggle)",
+        description:
+          "Toggle muting a room. Muted rooms don't appear in the main feed and don't generate notifications. Independent from subscribe_room — muting also unsubscribes-by-default for digest purposes, but the two toggles can be set independently.",
+        inputSchema: { room_slug: ROOM_SLUG },
+        outputSchema: toggleActionShape,
+        annotations: TOGGLE_ANNOTATIONS,
       },
-      async ({ room_slug }) => this.wrap(() => this.writeClient().muteRoom(room_slug)),
+      async ({ room_slug }) => this.wrapStructured(() => this.writeClient().muteRoom(room_slug)),
     );
 
-    // ---------- profile ------------------------------------------------
+    // ---------------- profile -----------------------------------------------
     this.server.registerTool(
       "toggle_profile_tag",
       {
+        title: "Profile tag (toggle)",
         description:
-          "Toggle a topical tag on the authenticated user's profile (e.g. `python`, `rust`, `kyiv`).",
-        inputSchema: { tag_code: SLUG },
-        annotations: WRITE_ANNOTATIONS,
+          "Add a topical tag to the authenticated user's profile, or remove it if already present. Use search_tags first to find the canonical tag_code (NOT the display name — codes are lowercase ASCII). Response includes both the new toggle status and the affected tag's full record (code, name, color).",
+        inputSchema: { tag_code: TAG_CODE },
+        outputSchema: profileTagActionResponseShape,
+        annotations: TOGGLE_ANNOTATIONS,
       },
-      async ({ tag_code }) => this.wrap(() => this.writeClient().toggleProfileTag(tag_code)),
+      async ({ tag_code }) =>
+        this.wrapStructured(() => this.writeClient().toggleProfileTag(tag_code)),
     );
   }
 }
