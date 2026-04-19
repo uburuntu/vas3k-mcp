@@ -1,8 +1,8 @@
 name: Uptime
 
-# Pings the public deployment every 5 minutes from a GitHub Actions cron and
-# opens an issue if it stops responding. Runs only on the canonical repo so
-# forks don't open issues against you.
+# Pings the public deployment hourly from a GitHub Actions cron and opens
+# an issue if it stops responding. Runs only on the canonical repo so forks
+# don't open issues against you.
 #
 # Why GH Actions instead of a Cloudflare-native check:
 #   - Zero extra service to provision; uses the runner you already have
@@ -13,7 +13,7 @@ name: Uptime
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 permissions:

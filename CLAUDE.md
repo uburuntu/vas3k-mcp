@@ -83,7 +83,7 @@ Three GitHub Actions live in `.github/workflows/`:
 - `contract.yml` — slow lane: spins up the actual vas3k.club Django stack (postgres + redis + Django) on the runner via `ci/bootstrap.py`, then runs the contract suite with `VAS3K_TEST_*` env vars wired in. Runs on PR src/test changes, on every main push, and weekly Mon 03:17 UTC. Cron is gated to the canonical repo via `if: github.repository == 'uburuntu/vas3k-mcp'`.
 - `deploy.yml` — main-push autodeploy via `cloudflare/wrangler-action`. Path-filtered (README-only commits don't redeploy). Bound to the GitHub `production` environment for required-reviewers gating (configured in repo Settings, not in YAML).
 
-Plus `uptime.yml` — pings `/.well-known/oauth-authorization-server` every 5 min, opens a deduped `uptime`-labelled issue on three consecutive failures, auto-closes on recovery.
+Plus `uptime.yml` — pings `/.well-known/oauth-authorization-server` hourly, opens a deduped `uptime`-labelled issue on three consecutive failures, auto-closes on recovery.
 
 Third-party actions are SHA-pinned with version comments. Dependabot keeps both pinned actions and npm deps fresh weekly (`.github/dependabot.yml`).
 
