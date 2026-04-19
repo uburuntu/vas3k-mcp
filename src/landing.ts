@@ -435,7 +435,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🔖</span><span class="tool-name">search_tags</span><span class="tool-desc">Поиск тегов с фильтром группы</span></div>
     </div>
 
-    <h3 class="tool-group-title">С правом писать — ещё 12 <span class="tool-group-badge tool-group-badge-write">/mcp-full</span></h3>
+    <h3 class="tool-group-title">С правом писать — ещё 11 <span class="tool-group-badge tool-group-badge-write">/mcp-full</span></h3>
     <p class="tool-group-desc">Доступно только на <code class="inline">/mcp-full</code>. Меняет состояние твоего аккаунта — лайки, букмарки, подписки. AI делает это от твоего имени, поэтому проверяй, что он там вытворяет.</p>
     <div class="tools">
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🔖</span><span class="tool-name">bookmark_post</span><span class="tool-desc">Добавить или убрать букмарк</span></div>
@@ -446,7 +446,6 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
       <div class="tool"><span class="tool-emoji" aria-hidden="true">💚</span><span class="tool-name">upvote_comment</span><span class="tool-desc">Лайкнуть комментарий</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">↩️</span><span class="tool-name">retract_comment_vote</span><span class="tool-desc">Снять лайк с коммента</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🫂</span><span class="tool-name">toggle_friend</span><span class="tool-desc">Отправить или отозвать запрос в друзья</span></div>
-      <div class="tool"><span class="tool-emoji" aria-hidden="true">🔇</span><span class="tool-name">toggle_mute_user</span><span class="tool-desc">Замьютить или вернуть юзера</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">📥</span><span class="tool-name">subscribe_room</span><span class="tool-desc">Подписаться на комнату</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🤐</span><span class="tool-name">mute_room</span><span class="tool-desc">Замьютить комнату</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🏷</span><span class="tool-name">toggle_profile_tag</span><span class="tool-desc">Переключить тег в профиле</span></div>

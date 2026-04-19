@@ -211,10 +211,10 @@ export class Vas3kClient {
     assertSlug(userSlug);
     return this.postAction<unknown>(`/user/${userSlug}/friend/`);
   };
-  toggleMuteUser = (userSlug: string) => {
-    assertSlug(userSlug);
-    return this.postAction<unknown>(`/user/${userSlug}/mute/`);
-  };
+  // NOTE: `toggle_mute_user` is intentionally NOT exposed. The upstream view
+  // `users/views/muted.py::toggle_mute` is decorated with `@require_auth`
+  // (not `@api`), returns HTML, and triggers `notify_admins_on_mute` which
+  // does an SMTP send. None of that survives a Bearer-token API call.
   subscribeRoom = (roomSlug: string) => {
     assertSlug(roomSlug);
     return this.postAction<unknown>(`/room/${roomSlug}/subscribe/`);

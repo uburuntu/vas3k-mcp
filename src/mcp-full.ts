@@ -118,15 +118,9 @@ export class MyMCPFull extends MyMCP {
       async ({ user_slug }) => this.wrap(() => this.client().toggleFriend(user_slug)),
     );
 
-    this.server.registerTool(
-      "toggle_mute_user",
-      {
-        description:
-          "Toggle mute on another club member. Muting hides their posts and comments from your feed.",
-        inputSchema: { user_slug: SLUG },
-      },
-      async ({ user_slug }) => this.wrap(() => this.client().toggleMuteUser(user_slug)),
-    );
+    // toggle_mute_user is intentionally absent — see Vas3kClient comment:
+    // upstream `users/views/muted.py::toggle_mute` is HTML+email-only,
+    // not API-shaped, so a Bearer-authed call always 500s.
 
     // ---------- rooms ---------------------------------------------------
     this.server.registerTool(

@@ -157,11 +157,6 @@ describe.skipIf(!serviceToken)("vas3k.club contract @ %s".replace("%s", baseUrl)
     await client.toggleFriend(friendSlug!);
   });
 
-  it.skipIf(!friendSlug)("toggle_mute_user toggles cleanly twice", async () => {
-    await client.toggleMuteUser(friendSlug!);
-    await client.toggleMuteUser(friendSlug!);
-  });
-
   it("invalid post slug rejects before fetch (slug validation)", () => {
     // assertSlug throws synchronously, before the call returns a Promise.
     // `expect(...).rejects` would only see Promise rejections, so wrap.
