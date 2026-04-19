@@ -8,7 +8,7 @@
 
 1. **`src/vas3k-client.ts`** — add a method on the client class that wraps the upstream endpoint. Reuse the shared `request()` helper so timeouts, redaction, and error mapping stay consistent.
 2. **`src/mcp.ts`** — register the tool with `this.server.registerTool(...)`. Define the input schema with `zod` (mirror upstream parameter names) and route the call through the existing `wrap()` helper for consistent error envelopes.
-3. **`src/landing.ts`** — add a tile to the **"Только чтение"** group inside the tool grid, and bump the count in the section header (`Только чтение — N инструментов`).
+3. **`src/landing.ts`** — add a tile to the **"Только чтение"** group inside the tool grid.
 4. **`test/contract/vas3k-club.test.ts`** — add a contract test if the tool has live-API meaning (i.e. the response shape can drift). Schema lives in `test/contract/schemas.ts`.
 
 ### Write tool (lands on `/mcp-full`)
@@ -16,7 +16,7 @@
 Same four steps, but:
 
 - Register on **`src/mcp-full.ts`** instead of `src/mcp.ts`.
-- Add the tile to the **"С правом писать"** group in `src/landing.ts` and bump that header's count (`С правом писать — ещё N`).
+- Add the tile to the **"Действия от твоего имени"** group in `src/landing.ts`.
 - Verify the upstream Django view is decorated with `@api(require_auth=True)` — write tools must require an authenticated upstream token, otherwise the dual-OAuth bridge has no purpose.
 
 ## Local dev loop

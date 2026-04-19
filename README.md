@@ -56,8 +56,8 @@ See [Self-host on Cloudflare Workers](#self-host-on-cloudflare-workers) below.
 
 The full read + write tool inventory lives on the landing page
 (<https://vas3k-mcp.rmbk.me/#умеет>) and in the agent-friendly Markdown
-guide at <https://vas3k-mcp.rmbk.me/install.md>. 12 read-only tools on
-`/mcp`, plus 11 write tools on `/mcp-full`.
+guide at <https://vas3k-mcp.rmbk.me/install.md>. Read tools on `/mcp`,
+write tools on `/mcp-full`.
 
 ## Self-host on Cloudflare Workers
 
@@ -164,8 +164,8 @@ of its callbacks (recommended in step 3 above), reuse the same `CLIENT_ID` /
    │ OAuthProvider (@cloudflare/workers-oauth-provider)        │
    │   ├── /authorize, /token, /register   (MCP-side OAuth)    │
    │   ├── /authorize, /callback           (Hono → vas3k)      │
-   │   ├── /mcp        →  MyMCP     : McpAgent  (12 read tools)│
-   │   └── /mcp-full   →  MyMCPFull : McpAgent  (+11 write)    │
+   │   ├── /mcp        →  MyMCP     : McpAgent  (read tools)   │
+   │   └── /mcp-full   →  MyMCPFull : McpAgent  (+ write tools)│
    │ Static: /, /favicon.*, /img/*, /site.webmanifest          │
    └───────────────────────────────────────────────────────────┘
                                 │

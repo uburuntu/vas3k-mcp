@@ -1,6 +1,6 @@
 /**
  * Read+write variant of the MCP server. Mounted at `/mcp-full`. Inherits the
- * 12 read tools from `MyMCP` and adds 11 write tools that mutate the user's
+ * read tools from `MyMCP` and adds write tools that mutate the user's
  * vas3k.club account.
  *
  * Why a separate class / endpoint instead of a global flag:
@@ -10,11 +10,11 @@
  *     particular MCP-client wants to use the *full* endpoint (the URL is
  *     surfaced verbatim).
  *
- * Note: this is a UX boundary, not a security boundary. The OAuth token is
- * the same for both endpoints — anyone who got a token can call either. To
- * make read/write a real security boundary you'd add OAuth scopes (`read`
- * vs `read write`) and gate each tool by `this.props.scope`. Defer that
- * until there's a real abuse signal.
+ * Defence in depth: every write tool also goes through `writeClient()`,
+ * which 403s when the granted MCP-side scope set doesn't include `write`.
+ * Today most MCP clients request the full set by default, so the check is
+ * usually a no-op — but a security-conscious client (or future tightening
+ * of the consent UI) can drop `write` and the boundary holds.
  *
  * Write coverage: only the cleanly @api-decorated POST views from upstream
  * (votes, bookmarks, subscriptions, friend, mute, room subscribe/mute,

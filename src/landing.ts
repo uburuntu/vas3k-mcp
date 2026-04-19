@@ -413,51 +413,6 @@ main {
   color: #1B1B1C;
 }
 
-/* endpoint cards (the "two URLs" callout) */
-.endpoints {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 14px;
-  margin-top: 16px;
-}
-.endpoint {
-  display: grid;
-  gap: 6px;
-  padding: 16px 18px;
-  border-radius: 12px;
-  background: var(--accent-soft);
-  border: 1px solid transparent;
-}
-.endpoint-write { border-color: var(--accent-strong); background: rgba(255, 196, 85, 0.28); }
-@media (prefers-color-scheme: dark) {
-  .endpoint-write { background: rgba(255, 196, 85, 0.16); }
-}
-.endpoint code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 14px;
-  color: var(--brighter-text-color);
-  word-break: break-all;
-  background: transparent;
-  padding: 0;
-}
-.endpoint-tag {
-  display: inline-block;
-  width: fit-content;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(0,0,0,0.06);
-  color: var(--brighter-text-color);
-}
-@media (prefers-color-scheme: dark) {
-  .endpoint-tag { background: rgba(255,255,255,0.1); }
-}
-.endpoint-tag-write { background: var(--accent); color: #1B1B1C; }
-.endpoint-note { font-size: 13px; opacity: 0.78; line-height: 1.4; }
-
 /* per-client accordion */
 .client {
   border-top: 1px solid var(--hairline);
@@ -747,12 +702,6 @@ pre > code {
   font-size: 14px;
   line-height: 1.55;
 }
-.code-caption {
-  font-size: 13.5px;
-  opacity: 0.7;
-  margin-top: 10px;
-}
-
 code.inline {
   font-family: var(--mono-font);
   font-size: 0.92em;
@@ -975,7 +924,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
   <section class="block" id="умеет">
     <h2>Что умеет 🛠</h2>
 
-    <h3 class="tool-group-title">Только чтение — 12 инструментов <span class="tool-group-badge">/mcp</span></h3>
+    <h3 class="tool-group-title">Только чтение <span class="tool-group-badge">/mcp</span></h3>
     <p class="tool-group-desc">Доступны на обоих URL. Ничего не меняют в Клубе.</p>
     <div class="tools">
       <div class="tool"><span class="tool-emoji" aria-hidden="true">👤</span><span class="tool-name">get_me</span><span class="tool-desc">Твой профиль</span></div>
@@ -992,7 +941,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🔖</span><span class="tool-name">search_tags</span><span class="tool-desc">Поиск тегов с фильтром группы</span></div>
     </div>
 
-    <h3 class="tool-group-title">Действия от твоего имени — ещё 11 <span class="tool-group-badge tool-group-badge-write">/mcp-full</span></h3>
+    <h3 class="tool-group-title">Действия от твоего имени <span class="tool-group-badge tool-group-badge-write">/mcp-full</span></h3>
     <p class="tool-group-desc">Только на <code class="inline">/mcp-full</code>. Лайки, закладки, подписки и т.&nbsp;п. — AI ставит их от твоего имени, когда ты его об этом просишь.</p>
     <div class="tools">
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🔖</span><span class="tool-name">bookmark_post</span><span class="tool-desc">Добавить или убрать закладку</span></div>

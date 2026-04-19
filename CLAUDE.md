@@ -42,8 +42,8 @@ make ci
 
 **Two endpoints, two McpAgent classes:**
 
-- `MyMCP` (`src/mcp.ts`) — read-only, mounted at `/mcp`, 12 tools. Defines protected `client()` and `wrap()` helpers used by both classes.
-- `MyMCPFull` (`src/mcp-full.ts`) — extends `MyMCP`, mounted at `/mcp-full`. Adds 11 write tools via `writeClient()`, which checks `props.mcpScopes.includes("write")` before delegating to `client()`.
+- `MyMCP` (`src/mcp.ts`) — read-only, mounted at `/mcp`. Defines protected `client()` and `wrap()` helpers used by both classes.
+- `MyMCPFull` (`src/mcp-full.ts`) — extends `MyMCP`, mounted at `/mcp-full`. Adds write tools via `writeClient()`, which checks `props.mcpScopes.includes("write")` before delegating to `client()`.
 
 Two non-obvious foot-guns in this setup, both documented in `src/index.ts`:
 1. `OAuthProvider`'s path matching is `pathname.startsWith(route)` and iterates insertion order — so `/mcp-full` (the longer route) **must come first** in the `apiHandlers` map, otherwise `/mcp` swallows it.
@@ -133,40 +133,6 @@ gh workflow run release.yml -f version=1.2.3         # explicit
 ```
 
 The deploy workflow does NOT gate on `VERSION` — `main` is what ships. Tagging is purely bookkeeping for humans, forks, and the GitHub Releases page.
-
-## Copy, voice, and branding
-
-Heavy copy polish landed in 1.0.0. Preserve these rules so the next iteration doesn't undo them.
-
-### Russian voice
-
-Applies to `src/landing.ts` and the consent screen in `src/vas3k-handler.ts`.
-
-- `ты`, never `вы`. No gendered slash forms (`запускал/-а` style — restructure or use the masculine generic, e.g. "Если подключал не ты").
-- No marketing / corporate phrasing. Direct, dry, slightly ironic — the vas3k.club voice.
-- Tech anglicisms OK where they're standard (OAuth, slug, MCP, JSON, API, Markdown). Prefer Russian otherwise: `закладки` not `букмарки`, `комментарии` (full form) not `комменты` / `коммента`, `URL` not `эндпоинт`.
-- Don't use `Claude` / `Cursor` as stand-ins for "any AI client" — they were scrubbed out of meta descriptions, the hero subtitle, the README intro and example phrasings. Use `AI` / `AI-ассистент`. Brand names are only kept where they're load-bearing: per-client install sections (landing + `install-md.ts`), README architecture diagram, internal source comments.
-
-### Hero direction: Клуб → AI
-
-The hero subtitle frames the Club as the resource and AI as the consumer (`Подключи Клуб к своему AI — чтобы умел искать людей, цитировать посты и подтягивать ссылки прямо в чате`). The inverted framing ("let your AI read the Club for you") was rejected because vas3k.club's value is real human reading and engagement — AI as substitute cuts against that. Verbs to favour: `искать`, `цитировать`, `подтягивать`. Verbs to avoid for AI actions: `читать`, `пересказывать`, `копаться в ленте`.
-
-When you change hero copy, sweep all the public-positioning surfaces so they stay aligned:
-
-- `<title>`, `<meta name="description">`, `og:title` / `og:description`, `twitter:title` / `twitter:description` in `src/landing.ts` head.
-- Hero `h1` + subtitle paragraph in the same file.
-- `name` / `description` in `public/site.webmanifest`.
-- `description` in `package.json`.
-- The intro line in `src/install-md.ts`.
-- GitHub repo About: `gh repo edit --description "…"`.
-
-### Branding facts
-
-The real vas3k.club mark is `✖️`. The avocado-with-headphones in `public/img/hero.webp` (also `readme-hero.webp`, `og.{webp,png}`) is **not** canonical club branding — it's a user-supplied illustration that we adopted as our own mascot. Across the entire `vas3k/vas3k.club` source the avocado emoji appears exactly once, as the tag emoji for `healthy-food` (`reference/common/data/tags.py:75`). Don't reintroduce 🥑 as if it were the club logo (e.g. in the hero tag), and don't pad copy with avocado puns. The mascot is a knowing in-joke, not corporate identity.
-
-### Layout note
-
-The `.agent-hint` callout under "Как подключить" lives **outside** the section's `<section class="block">` — as a sibling, not a child. Fighting margin-top inside the block didn't produce a visible gap (block padding-bottom + section margin-bottom were eating the perceived spacing); making it a sibling lets section-level spacing handle the separation. If you reorganise the page, keep the callout outside section blocks.
 
 ## Things to avoid
 

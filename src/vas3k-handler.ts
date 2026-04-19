@@ -9,7 +9,12 @@
 
 import type { AuthRequest } from "@cloudflare/workers-oauth-provider";
 import { Hono } from "hono";
-import { UPSTREAM_SCOPE as SCOPE, STATE_TTL_SECONDS, UPSTREAM_TIMEOUT_MS } from "./constants";
+import {
+  CURRENT_PROPS_VERSION,
+  UPSTREAM_SCOPE as SCOPE,
+  STATE_TTL_SECONDS,
+  UPSTREAM_TIMEOUT_MS,
+} from "./constants";
 import { installMd } from "./install-md";
 import { landingHtml } from "./landing";
 import type { Env, Props } from "./types";
@@ -263,7 +268,7 @@ app.get("/callback", async (c) => {
   const fullName = me.user?.full_name ?? slug;
 
   const props: Props = {
-    propsVersion: 1,
+    propsVersion: CURRENT_PROPS_VERSION,
     slug,
     fullName,
     upstreamAccessToken: tokens.access_token,

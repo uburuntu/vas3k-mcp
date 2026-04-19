@@ -4,6 +4,8 @@
  * we minted during the OAuth dance.
  */
 
+import { UPSTREAM_TIMEOUT_MS, USER_AGENT } from "./constants";
+
 export class Vas3kAPIError extends Error {
   constructor(
     public status: number,
@@ -26,8 +28,6 @@ export interface Vas3kClientOptions {
    */
   serviceToken?: string;
 }
-
-import { UPSTREAM_TIMEOUT_MS } from "./constants";
 
 const SLUG_RE = /^[a-zA-Z0-9_-]{1,64}$/;
 const TELEGRAM_ID_RE = /^\d+$/;
@@ -68,7 +68,7 @@ export class Vas3kClient {
     }
 
     const headers: Record<string, string> = {
-      "User-Agent": "vas3k-mcp-worker/0.1",
+      "User-Agent": USER_AGENT,
     };
     if (this.opts.accessToken) {
       headers.Authorization = `Bearer ${this.opts.accessToken}`;

@@ -10,17 +10,17 @@ export const installMd = `# vas3k-mcp installation guide
 
 ## What it gives your user
 
-- 12 read tools: profiles, posts, feeds, search.
-- 11 write tools (separate endpoint): votes, bookmarks, friends, room subscribe/mute, profile-tag toggle.
+- Read tools: profiles, posts, feeds, search.
+- Write tools (separate endpoint): votes, bookmarks, friends, room subscribe/mute, profile-tag toggle.
 
 All actions are gated by the user's vas3k.club OAuth — no global admin access. Every write is reversible via its toggle/retract counterpart. Nothing destructive.
 
 ## Endpoints
 
-| Mode | URL | Tools |
-|---|---|---|
-| Read-only | \`https://vas3k-mcp.rmbk.me/mcp\` | 12 |
-| Read + write | \`https://vas3k-mcp.rmbk.me/mcp-full\` | 23 |
+| Mode | URL |
+|---|---|
+| Read-only | \`https://vas3k-mcp.rmbk.me/mcp\` |
+| Read + write | \`https://vas3k-mcp.rmbk.me/mcp-full\` |
 
 **Default to \`/mcp\`** unless the user explicitly asks for write actions (likes, bookmarks, subscriptions, friends, profile tags).
 
