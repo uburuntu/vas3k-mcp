@@ -20,3 +20,5 @@ REVIEW_*.md
 # Source images for `make images` — only the optimized public/img/* outputs
 # are tracked. Drop fresh exports here, run `make images`, commit the diff.
 /*-v[0-9]*.png
+/*-v[0-9]*.jpg
+/*-v[0-9]*.jpeg
