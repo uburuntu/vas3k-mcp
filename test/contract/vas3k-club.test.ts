@@ -162,7 +162,9 @@ describe.skipIf(!serviceToken)("vas3k.club contract @ %s".replace("%s", baseUrl)
     await client.toggleMuteUser(friendSlug!);
   });
 
-  it("invalid post slug rejects before fetch (slug validation)", async () => {
-    await expect(client.upvotePost("../etc/passwd")).rejects.toBeInstanceOf(Vas3kAPIError);
+  it("invalid post slug rejects before fetch (slug validation)", () => {
+    // assertSlug throws synchronously, before the call returns a Promise.
+    // `expect(...).rejects` would only see Promise rejections, so wrap.
+    expect(() => client.upvotePost("../etc/passwd")).toThrow(Vas3kAPIError);
   });
 });

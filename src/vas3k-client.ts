@@ -94,11 +94,16 @@ export class Vas3kClient {
     }
 
     if (!response.ok) {
-      let payload: unknown;
+      // Read the body once as text, then opportunistically parse as JSON.
+      // The previous `try response.json() / catch response.text()` shape
+      // crashes with "Body is unusable" when the body isn't JSON, because
+      // `.json()` consumes the body before throwing.
+      const body = await response.text();
+      let payload: unknown = body;
       try {
-        payload = await response.json();
+        payload = JSON.parse(body);
       } catch {
-        payload = await response.text();
+        // leave payload as the raw text
       }
       throw new Vas3kAPIError(response.status, payload);
     }
