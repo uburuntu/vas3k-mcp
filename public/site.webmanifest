@@ -1,0 +1,14 @@
+{
+  "name": "vas3k-mcp",
+  "short_name": "vas3k-mcp",
+  "description": "MCP-сервер для vas3k.club",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#FFC455",
+  "background_color": "#FCFDFF",
+  "icons": [
+    { "src": "/web-app-manifest-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/web-app-manifest-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

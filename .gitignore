@@ -16,3 +16,7 @@ reference/
 # Internal review artifacts from the pre-launch audit (kept locally for the
 # author's reference; not part of the public repo).
 REVIEW_*.md
+
+# Source images for `make images` — only the optimized public/img/* outputs
+# are tracked. Drop fresh exports here, run `make images`, commit the diff.
+/*-v[0-9]*.png

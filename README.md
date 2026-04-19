@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/img/readme-hero.webp" alt="vas3k-mcp — MCP-сервер для Клуба" width="900" />
+</p>
+
 # vas3k-mcp
 
 A remote [Model Context Protocol](https://modelcontextprotocol.io) server for

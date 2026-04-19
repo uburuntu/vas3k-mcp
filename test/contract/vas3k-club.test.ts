@@ -38,7 +38,7 @@ const serviceToken = process.env.VAS3K_SERVICE_TOKEN;
 
 if (!serviceToken) {
   // Make the skip visible in CI logs so a missing secret doesn't masquerade
-  // as a green "all contract checks passed" run (REVIEW_code.md test gap #6).
+  // as a green "all contract checks passed" run.
   console.warn(
     "[contract] Skipped: VAS3K_SERVICE_TOKEN unset — set it in CI to run live contract checks.",
   );

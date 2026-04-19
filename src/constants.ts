@@ -1,7 +1,7 @@
 /**
- * Shared constants — single source of truth for values that were duplicated
- * across modules (REVIEW_maintain.md P1-4). Keep additions terse: numbers
- * with units in the name, strings with what-they-are explained inline.
+ * Shared constants — single source of truth for values that would otherwise
+ * be duplicated across modules. Keep additions terse: numbers with units in
+ * the name, strings with what-they-are explained inline.
  */
 
 /** Hard request timeout for any single upstream HTTP call. */

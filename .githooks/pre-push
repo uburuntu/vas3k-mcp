@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Pre-push hook: runs the fast subset of CI (`make ci`) before letting a
+# push leave your machine. Mirrors what .github/workflows/ci.yml runs on
+# every PR, so red CI for a sloppy commit is caught locally.
+#
+# Bypass once: `git push --no-verify`
+# Disable always: `git config --unset core.hooksPath`
+#
+# Activate (one-time, per clone):  make hooks
+
+set -euo pipefail
+
+printf "→ pre-push: make ci\n"
+make ci

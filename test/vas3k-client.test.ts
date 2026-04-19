@@ -120,7 +120,7 @@ describe("Vas3kClient", () => {
     expect(url).toContain("group=tech");
   });
 
-  // ---------- hardening behaviors (REVIEW_code.md P0 #4 / P1 #5 / P1 #7) ----------
+  // ---------- hardening behaviors ----------
 
   it("treats a 302 redirect as Vas3kAPIError with the Location in the payload", async () => {
     // Upstream redirects to /{correct_type}/{slug}/ when post_type doesn't match

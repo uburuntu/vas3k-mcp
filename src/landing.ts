@@ -17,11 +17,17 @@ export const landingHtml: string = `<!doctype html>
 <meta property="og:title" content="vas3k-mcp — MCP-сервер для Клуба" />
 <meta property="og:description" content="Подключи Claude, Cursor и других AI-ассистентов к Вастрик.Клубу через OAuth." />
 <meta property="og:type" content="website" />
-<meta property="og:image" content="https://vas3k.club/static/images/share.png" />
+<meta property="og:image" content="https://vas3k-mcp.rmbk.me/img/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
 <meta property="og:url" content="https://vas3k-mcp.rmbk.me/" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="theme-color" content="#FCFDFF" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#282c35" media="(prefers-color-scheme: dark)" />
+<link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="32x32" />
+<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Ubuntu+Mono:wght@400;700&display=swap" />
@@ -128,19 +134,30 @@ main {
   box-shadow: var(--block-shadow);
   position: relative;
   overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 32px;
 }
-
-.hero::before {
-  content: "";
-  position: absolute;
-  top: -80px;
-  right: -80px;
-  width: 220px;
-  height: 220px;
-  background: var(--accent);
-  border-radius: 50%;
-  opacity: 0.5;
-  z-index: 0;
+.hero-text { position: relative; z-index: 1; min-width: 0; }
+.hero-art {
+  width: 280px;
+  height: 280px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+.hero-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  /* Soft yellow halo behind the image — picks up the badge accent */
+  filter: drop-shadow(0 18px 32px rgba(255, 196, 85, 0.28));
+}
+@media (max-width: 720px) {
+  .hero { grid-template-columns: 1fr; gap: 18px; padding: 38px 28px 32px; }
+  .hero-art { width: 200px; height: 200px; margin: 0 auto; order: -1; }
 }
 
 .hero-tag {
@@ -168,10 +185,6 @@ main {
 }
 
 @media (max-width: 570px) { .hero h1 { font-size: 36px; } }
-
-@media (max-width: 480px) {
-  .hero::before { width: 140px; height: 140px; top: -50px; right: -50px; opacity: 0.35; }
-}
 
 .hero p {
   position: relative;
@@ -510,12 +523,17 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
 <main>
 
   <section class="hero">
-    <span class="hero-tag">🤖 MCP × 🥑 Вастрик.Клуб</span>
-    <h1>MCP-сервер<br />для Клуба</h1>
-    <p>Подключи Claude, Cursor и других AI-ассистентов к Клубу по OAuth — пусть читают посты, ищут людей и копаются в ленте, пока ты занят чем-то поинтереснее.</p>
-    <div class="hero-cta">
-      <a href="#подключить" class="button">Как подключить →</a>
-      <a href="https://github.com/uburuntu/vas3k-mcp" class="button button-ghost" target="_blank" rel="noopener">GitHub</a>
+    <div class="hero-text">
+      <span class="hero-tag">🤖 MCP × 🥑 Вастрик.Клуб</span>
+      <h1>MCP-сервер<br />для Клуба</h1>
+      <p>Подключи Claude, Cursor и других AI-ассистентов к Клубу по OAuth — пусть читают посты, ищут людей и копаются в ленте, пока ты занят чем-то поинтереснее.</p>
+      <div class="hero-cta">
+        <a href="#подключить" class="button">Как подключить →</a>
+        <a href="https://github.com/uburuntu/vas3k-mcp" class="button button-ghost" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="hero-art">
+      <img src="/img/hero.webp" alt="" width="280" height="280" decoding="async" />
     </div>
   </section>
 

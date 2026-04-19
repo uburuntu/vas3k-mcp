@@ -39,6 +39,15 @@
   // Binding name MUST be `OAUTH_KV` — `@cloudflare/workers-oauth-provider`
   // hardcodes that lookup. The dashboard title (`vas3k-mcp-oauth`) stays.
   "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "83bce296a0d0431da4765e6801118983" }],
+
+  // Static assets (hero image, og image, future favicons) — served at their
+  // path under /. `not_found_handling: "none"` means a missing asset falls
+  // through to the worker's defaultHandler (so /, /mcp, /authorize still
+  // route through Hono / OAuthProvider as before).
+  "assets": {
+    "directory": "./public",
+    "not_found_handling": "none"
+  },
   // 10% sampling — keeps Logpush + dashboard cost predictable as traffic grows.
   // For a low-traffic remote MCP today this is over-engineering, but the knob is
   // here so we don't have to ship a config change in panic if usage spikes.

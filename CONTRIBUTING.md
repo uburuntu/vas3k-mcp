@@ -22,11 +22,15 @@ Same four steps, but:
 ## Local dev loop
 
 ```bash
-pnpm install
+make install                     # pnpm install
+make hooks                       # one-time: enable .githooks/pre-push (runs `make ci`)
 cp .dev.vars.example .dev.vars   # then fill VAS3K_CLIENT_ID/SECRET and a 32-byte hex COOKIE_ENCRYPTION_KEY
-pnpm dev                         # wrangler dev on http://localhost:8788
-pnpm typecheck && pnpm lint && pnpm test
+make dev                         # wrangler dev on http://localhost:8788
+make ci                          # typecheck + lint + test (the pre-push hook runs this for you)
 ```
+
+`make help` lists every target. The pre-push hook is local-only — bypass with
+`git push --no-verify` for the rare case you need it.
 
 ## Contract tests
 
@@ -53,7 +57,7 @@ Schema-shape tests run against a real vas3k.club Django stack. CI does this auto
 
 ## PR checklist
 
-- [ ] `pnpm typecheck && pnpm lint && pnpm test` all pass locally.
+- [ ] `make ci` passes locally (the pre-push hook runs this automatically).
 - [ ] Contract test added in `test/contract/vas3k-club.test.ts` if the change touches an upstream endpoint.
 - [ ] `README.md` updated if user-visible behavior or setup steps change.
 - [ ] `pnpm exec biome check --write .` is clean (no diff).
