@@ -169,4 +169,91 @@ describe("Vas3kClient", () => {
     );
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  // ---------- write methods ----------
+  // The write surface delegates to a single `postAction` helper that always
+  // appends `?is_ajax=1` and sends `method: POST`. Verify the URL, query, and
+  // method for one tool per category, plus slug/uuid validation.
+
+  describe("write actions", () => {
+    const VALID_UUID = "8e3a73b9-31fc-4abc-8a7e-1c3a40e5d6f2";
+
+    it.each([
+      ["bookmarkPost", "post/x/bookmark/", "x"],
+      ["upvotePost", "post/x/upvote/", "x"],
+      ["retractPostVote", "post/x/retract_vote/", "x"],
+      ["togglePostSubscription", "post/x/subscription/", "x"],
+      ["toggleEventParticipation", "post/x/participate/", "x"],
+      ["toggleFriend", "user/x/friend/", "x"],
+      ["subscribeRoom", "room/x/subscribe/", "x"],
+      ["muteRoom", "room/x/mute/", "x"],
+      ["toggleProfileTag", "profile/tag/x/toggle/", "x"],
+    ] as const)("%s POSTs to /%s with ?is_ajax=1", async (method, path, slug) => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({ status: "created" }));
+      const client = new Vas3kClient({ baseUrl: BASE, accessToken: "t" });
+      // biome-ignore lint/suspicious/noExplicitAny: dynamic dispatch over the client's typed methods
+      await (client[method as keyof Vas3kClient] as any)(slug);
+
+      const [url, init] = fetchMock.mock.calls[0]!;
+      expect(url).toBe(`${BASE}/${path}?is_ajax=1`);
+      expect((init as RequestInit).method).toBe("POST");
+      // Bearer header still flows through on writes.
+      expect((init as RequestInit).headers).toMatchObject({
+        Authorization: "Bearer t",
+      });
+    });
+
+    it.each([
+      ["upvoteComment", `comment/${VALID_UUID}/upvote/`],
+      ["retractCommentVote", `comment/${VALID_UUID}/retract_vote/`],
+    ] as const)("%s validates UUID and POSTs to /%s", async (method, path) => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse({ comment: { upvotes: 1 }, upvoted_timestamp: 0 }),
+      );
+      const client = new Vas3kClient({ baseUrl: BASE, accessToken: "t" });
+      // biome-ignore lint/suspicious/noExplicitAny: dynamic dispatch
+      await (client[method as keyof Vas3kClient] as any)(VALID_UUID);
+
+      const [url, init] = fetchMock.mock.calls[0]!;
+      expect(url).toBe(`${BASE}/${path}?is_ajax=1`);
+      expect((init as RequestInit).method).toBe("POST");
+    });
+
+    it("comment write actions reject malformed UUIDs before fetching", async () => {
+      const client = new Vas3kClient({ baseUrl: BASE, accessToken: "t" });
+      await expect(async () => client.upvoteComment("not-a-uuid")).rejects.toBeInstanceOf(
+        Vas3kAPIError,
+      );
+      await expect(async () => client.retractCommentVote("../etc/passwd")).rejects.toBeInstanceOf(
+        Vas3kAPIError,
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("post write actions reject malformed slugs before fetching", async () => {
+      const client = new Vas3kClient({ baseUrl: BASE, accessToken: "t" });
+      await expect(async () => client.bookmarkPost("../etc/passwd")).rejects.toBeInstanceOf(
+        Vas3kAPIError,
+      );
+      await expect(async () => client.upvotePost("name with space")).rejects.toBeInstanceOf(
+        Vas3kAPIError,
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("write call surfaces 401 as Vas3kAPIError", async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({ error: "unauth" }, { status: 401 }));
+      const client = new Vas3kClient({ baseUrl: BASE, accessToken: "t" });
+      await expect(client.upvotePost("x")).rejects.toBeInstanceOf(Vas3kAPIError);
+    });
+
+    it("write call surfaces 5xx with the upstream payload preserved", async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({ error: "redis is sad" }, { status: 503 }));
+      const client = new Vas3kClient({ baseUrl: BASE, accessToken: "t" });
+      await expect(client.bookmarkPost("x")).rejects.toMatchObject({
+        status: 503,
+        payload: { error: "redis is sad" },
+      });
+    });
+  });
 });

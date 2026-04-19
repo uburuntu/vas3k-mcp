@@ -34,13 +34,16 @@ vi.mock("agents/mcp", () => {
 const { MyMCP } = await import("../src/mcp");
 const { Vas3kAPIError } = await import("../src/vas3k-client");
 
-// `wrap` is declared `private` — reach it via the prototype to side-step
-// TS visibility without touching `src/`.
+// `wrap` and `wrapStructured` are declared `protected` — reach them via the
+// prototype to side-step TS visibility without touching `src/`.
 type WrapResult = {
   isError?: boolean;
   content: { type: "text"; text: string }[];
+  structuredContent?: Record<string, unknown>;
 };
-const wrap = (MyMCP.prototype as unknown as Record<string, unknown>).wrap as <T>(
+const proto = MyMCP.prototype as unknown as Record<string, unknown>;
+const wrap = proto.wrap as <T>(this: unknown, fn: () => Promise<T>) => Promise<WrapResult>;
+const wrapStructured = proto.wrapStructured as <T>(
   this: unknown,
   fn: () => Promise<T>,
 ) => Promise<WrapResult>;
@@ -48,6 +51,9 @@ const wrap = (MyMCP.prototype as unknown as Record<string, unknown>).wrap as <T>
 function callWrap<T>(fn: () => Promise<T>) {
   // Pass an empty stub for `this` — wrap doesn't reference it.
   return wrap.call({}, fn);
+}
+function callWrapStructured<T>(fn: () => Promise<T>) {
+  return wrapStructured.call({}, fn);
 }
 
 describe("MyMCP.wrap", () => {
@@ -133,5 +139,64 @@ describe("MyMCP.wrap", () => {
     });
     const text = result.content[0]?.text ?? "";
     expect(text).not.toContain("st_supersecret123");
+  });
+});
+
+describe("MyMCP.wrapStructured", () => {
+  it("returns { content: [], structuredContent } on success", async () => {
+    const result = await callWrapStructured(async () => ({ user: { slug: "vas3k" } }));
+
+    expect(result.isError).toBeUndefined();
+    // wrapStructured drops the JSON text duplicate — the SDK requires
+    // `content` to be present (zod default), but we ship it empty.
+    expect(result.content).toEqual([]);
+    expect(result.structuredContent).toEqual({ user: { slug: "vas3k" } });
+  });
+
+  it("works for nested objects (the common case for outputSchema'd tools)", async () => {
+    const data = {
+      post: { upvotes: 42 },
+      upvoted_timestamp: 1700000000000,
+    };
+    const result = await callWrapStructured(async () => data);
+    expect(result.structuredContent).toEqual(data);
+  });
+
+  it("falls back to the same error format as wrap on Vas3kAPIError", async () => {
+    const result = await callWrapStructured(async () => {
+      throw new Vas3kAPIError(404, { error: "not found" });
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toBeUndefined();
+    expect(result.content[0]?.text ?? "").toContain("vas3k.club returned 404");
+    expect(result.content[0]?.text ?? "").toContain("check the slug");
+  });
+
+  it("redacts secrets in error payloads, same as wrap (defence in depth)", async () => {
+    const result = await callWrapStructured(async () => {
+      throw new Vas3kAPIError(401, {
+        error: "bad token",
+        debug: "received Bearer abc.def.ghi-secret",
+      });
+    });
+
+    const text = result.content[0]?.text ?? "";
+    expect(text).not.toContain("abc.def.ghi-secret");
+    expect(text).toContain("[REDACTED]");
+  });
+
+  it("handles unexpected errors with the generic 'Unexpected error' framing", async () => {
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const result = await callWrapStructured(async () => {
+        throw new TypeError("kaboom");
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0]?.text ?? "").toMatch(/Unexpected error/);
+      expect(result.content[0]?.text ?? "").toContain("kaboom");
+    } finally {
+      errSpy.mockRestore();
+    }
   });
 });
