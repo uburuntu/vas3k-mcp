@@ -60,7 +60,14 @@ describe.skipIf(!serviceToken)("vas3k.club contract @ %s".replace("%s", baseUrl)
     expect(userTagsResponseSchema.safeParse(data).success).toBe(true);
   });
 
-  it("get_user_badges returns a badges array", async () => {
+  // Marked `.fails` because vas3k.club@master has a regression in
+  // `users/api.py:71` — it does `UserBadge.objects.filter(user=user)` but
+  // the model only has `from_user` and `to_user` (no `user` field). Every
+  // call to `/user/<slug>/badges.json` returns Django FieldError 400.
+  // When upstream patches the filter (likely `to_user=user`), this test
+  // will start passing — vitest then fails it, alerting us to flip back
+  // to plain `it()`. Bug report: https://github.com/vas3k/vas3k.club/issues
+  it.fails("get_user_badges returns a badges array", async () => {
     const me = userResponseSchema.parse(await client.getMe());
     const data = await client.getUserBadges(me.user.slug);
     expect(userBadgesResponseSchema.safeParse(data).success).toBe(true);
