@@ -24,11 +24,11 @@ takes ~10 minutes on Cloudflare's free tier.
 
 | | **Public deployment** | **Your own copy** |
 | --- | --- | --- |
-| Setup | Paste a URL into Claude. Done. | Fork → register a vas3k.club app → push 3 secrets → `pnpm deploy`. |
+| Setup | Paste a URL into Claude. Done. | Fork → register a vas3k.club app → push 3 secrets → `make deploy`. |
 | Cost | Free | Free (Cloudflare's generous tier) |
 | Trust | You trust *me* (the repo author) to not poke at refresh tokens. They're encrypted with a per-deployment key in KV, but encryption isn't a substitute for trust. | Only you. Tokens never leave your account. |
 | Reliability | Best-effort. One shared CF deployment, single shared rate-limit budget vs vas3k.club. May disappear without notice. | Yours. Independent rate-limit. |
-| Updates | Auto-deployed from `main`. | You `git pull && pnpm deploy`. |
+| Updates | Auto-deployed from `main`. | You `git pull && make deploy`. |
 
 ### Public deployment
 
@@ -81,7 +81,7 @@ Free tier on Cloudflare is generous; you'll likely never pay for this.
 ```sh
 git clone https://github.com/uburuntu/vas3k-mcp
 cd vas3k-mcp
-pnpm install
+make install
 ```
 
 ### 2. Provision Cloudflare resources
@@ -104,7 +104,7 @@ Sign in to vas3k.club, then go to <https://vas3k.club/apps/create/>:
 | URL вашего сайта или бота | `https://github.com/<you>/vas3k-mcp` |
 | Разрешённые Callback URL | `https://vas3k-mcp.<your-cf-subdomain>.workers.dev/callback, http://127.0.0.1:8788/callback` |
 
-The second URL covers `pnpm dev`. Find your `<your-cf-subdomain>` with:
+The second URL covers `make dev`. Find your `<your-cf-subdomain>` with:
 
 ```sh
 curl -H "Authorization: Bearer $(grep oauth_token ~/Library/Preferences/.wrangler/config/default.toml | cut -d'"' -f2)" \
@@ -137,7 +137,7 @@ Treat it like a password; rotating it logs everyone out.
 ### 5. Deploy
 
 ```sh
-pnpm deploy
+make deploy
 ```
 
 The first deploy prints your Worker URL. Copy it back into the vas3k.club app
@@ -147,7 +147,7 @@ settings as the redirect URI, then redeploy.
 
 ```sh
 cp .dev.vars.example .dev.vars   # fill in client id/secret/cookie key
-pnpm dev                         # http://127.0.0.1:8788
+make dev                         # http://127.0.0.1:8788
 ```
 
 If your vas3k.club app already lists `http://127.0.0.1:8788/callback` as one
@@ -158,25 +158,29 @@ of its callbacks (recommended in step 3 above), reuse the same `CLIENT_ID` /
 
 | Var                     | Where    | Purpose                                                      |
 | ----------------------- | -------- | ------------------------------------------------------------ |
-| `VAS3K_BASE_URL`        | `vars`   | vas3k.club host (default `https://vas3k.club`)               |
-| `VAS3K_CLIENT_ID`       | secret   | OAuth client id from vas3k.club app                          |
-| `VAS3K_CLIENT_SECRET`   | secret   | OAuth client secret from vas3k.club app                      |
-| `COOKIE_ENCRYPTION_KEY` | secret   | 32-byte hex key — encrypts `props` inside MCP-issued tokens  |
-| `OAUTH_KV`              | binding  | KV (dashboard title `vas3k-mcp-oauth`); name hardcoded by lib |
-| `MCP_OBJECT`            | binding  | Durable Object for `McpAgent` per-session storage            |
+| `VAS3K_BASE_URL`        | `vars`   | vas3k.club host (default `https://vas3k.club`)                 |
+| `PUBLIC_BASE_URL`       | `vars`   | This worker's public URL — used to build the OAuth redirect_uri |
+| `VAS3K_CLIENT_ID`       | secret   | OAuth client id from your vas3k.club app                       |
+| `VAS3K_CLIENT_SECRET`   | secret   | OAuth client secret from your vas3k.club app                   |
+| `COOKIE_ENCRYPTION_KEY` | secret   | 32-byte hex — encrypts `props` inside MCP-issued tokens        |
+| `OAUTH_KV`              | binding  | KV (dashboard title `vas3k-mcp-oauth`); binding name hardcoded by the lib |
+| `MCP_OBJECT`            | binding  | Durable Object for the `/mcp` (read-only) `McpAgent`           |
+| `MCP_OBJECT_FULL`       | binding  | Durable Object for the `/mcp-full` (read+write) `McpAgent`     |
 
 ## Architecture
 
 ```
-   MCP client (Claude Desktop / Code / Cursor)
-        │  Bearer token issued by us (props encrypted into it)
+   MCP client (Claude Desktop / Code / Cursor / ChatGPT / …)
+        │  Bearer token issued by us (props HMAC-encrypted into it)
         ▼
-   ┌──────────────────────── Worker ────────────────────────┐
-   │ OAuthProvider (@cloudflare/workers-oauth-provider)     │
-   │   ├── /authorize, /token, /register  (MCP-side OAuth)  │
-   │   ├── /authorize, /callback          (Hono → vas3k)    │
-   │   └── /mcp  ─►  MyMCP : McpAgent  (12 tools)           │
-   └────────────────────────────────────────────────────────┘
+   ┌─────────────────────── Worker ────────────────────────────┐
+   │ OAuthProvider (@cloudflare/workers-oauth-provider)        │
+   │   ├── /authorize, /token, /register   (MCP-side OAuth)    │
+   │   ├── /authorize, /callback           (Hono → vas3k)      │
+   │   ├── /mcp        →  MyMCP     : McpAgent  (12 read tools)│
+   │   └── /mcp-full   →  MyMCPFull : McpAgent  (+11 write)    │
+   │ Static: /, /favicon.*, /img/*, /site.webmanifest          │
+   └───────────────────────────────────────────────────────────┘
                                 │
                                 ▼
                        vas3k.club JSON API
@@ -256,6 +260,14 @@ registering client and surfaces both the `client_id` and `redirect_uri`
 verbatim. If you want to lock down further on a private deploy, set
 `disallowPublicClientRegistration: true` in `src/index.ts` and pre-register
 each client via `OAuthProvider.createClient`.
+
+## Project meta
+
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) — adding a tool, dev loop, PR checklist
+- [`CHANGELOG.md`](./CHANGELOG.md) — Keep-a-Changelog formatted release log
+- [`SECURITY.md`](./SECURITY.md) — vulnerability disclosure
+- [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) — Contributor Covenant 2.1
+- [`docs/runbook.md`](./docs/runbook.md) — operator runbook (token rotation, KV reset, rollback)
 
 ## License
 

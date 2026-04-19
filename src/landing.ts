@@ -21,7 +21,11 @@ export const landingHtml: string = `<!doctype html>
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta property="og:url" content="https://vas3k-mcp.rmbk.me/" />
+<meta property="og:locale" content="ru_RU" />
 <meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://vas3k-mcp.rmbk.me/img/og.png" />
+<meta name="twitter:title" content="vas3k-mcp — MCP-сервер для Клуба" />
+<meta name="twitter:description" content="Подключи Claude, Cursor и других AI-ассистентов к Вастрик.Клубу через OAuth." />
 <meta name="theme-color" content="#FCFDFF" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#282c35" media="(prefers-color-scheme: dark)" />
 <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="32x32" />
