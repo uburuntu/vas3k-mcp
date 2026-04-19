@@ -778,25 +778,25 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
   <section class="block" id="зачем">
     <h2>Что это и зачем 🤔</h2>
     <p class="lede">
-      <strong>MCP</strong> — стандарт, чтобы AI-ассистенты ходили в живые API, а не выдумывали ответы. Этот сервер подключает Клуб как обычное OAuth-приложение со страницы <a href="https://vas3k.club/apps/" target="_blank" rel="noopener">/apps/</a>.
+      <strong>MCP</strong> — способ дать AI-ассистентам ходить в живые API, а не выдумывать ответы. Этот сервер подключает Клуб как обычное OAuth-приложение со страницы <a href="https://vas3k.club/apps/" target="_blank" rel="noopener">/apps/</a>.
     </p>
     <p>На практике:</p>
     <ul class="examples">
       <li><strong>Дайджест за неделю.</strong> «Что я пропустил в Клубе за неделю?» — Claude тянет свежие посты из нужных лент, фильтрует по твоим тегам и собирает короткий пересказ.</li>
       <li><strong>Поиск своих.</strong> «Кто в Клубе пишет про Rust в проде?» — поиск по людям и тегам в один заход.</li>
-      <li><strong>Длинный тред.</strong> «Перескажи спор в комментах вот этого поста» — markdown поста плюс ветка обсуждения.</li>
+      <li><strong>Длинный тред.</strong> «Перескажи спор в комментариях вот этого поста» — Markdown поста плюс ветка обсуждения.</li>
     </ul>
   </section>
 
   <section class="block connection-builder" id="подключить">
     <h2>Как подключить 🔌</h2>
-    <p>Один URL, любой MCP-клиент. Включи переключатель ниже, если хочешь, чтобы AI мог ставить лайки, закладки и подписки от твоего имени — все сниппеты под ним сразу обновятся.</p>
+    <p>Один URL, любой MCP-клиент. Включи переключатель ниже, если хочешь, чтобы AI мог ставить лайки, закладки и подписки от твоего имени — сниппеты ниже сразу обновятся.</p>
 
     <input type="checkbox" id="write-toggle" class="write-toggle-input" />
     <label for="write-toggle" class="write-toggle">
       <span class="write-toggle-track"><span class="write-toggle-knob"></span></span>
       <span class="write-toggle-text">
-        <strong>Разрешить действия от моего имени</strong>
+        <strong>Разрешить действия от твоего имени</strong>
         <span class="write-toggle-sub">лайки, закладки, подписки, друзья, теги</span>
       </span>
       <span class="write-toggle-badge"><span class="read-url">/mcp</span><span class="write-url">/mcp-full</span></span>
@@ -837,7 +837,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
           <span class="client-where">Settings → Connectors → Add Connector</span>
         </summary>
         <div class="client-body">
-          <p>В поле <em>Server URL</em> — этот URL, тип авторизации — OAuth:</p>
+          <p>В поле <em>Server URL</em> — адрес ниже, тип авторизации — OAuth:</p>
 <pre class="snippet read-snippet"><code>https://vas3k-mcp.rmbk.me/mcp</code></pre>
 <pre class="snippet write-snippet"><code>https://vas3k-mcp.rmbk.me/mcp-full</code></pre>
         </div>
@@ -880,7 +880,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
       <details class="client">
         <summary>
           <span class="client-name">MCP Inspector</span>
-          <span class="client-where">Дебаг-клиент от Anthropic — для ручной отладки</span>
+          <span class="client-where">Отладочный клиент от Anthropic</span>
         </summary>
         <div class="client-body">
 <pre><code>npx @modelcontextprotocol/inspector</code></pre>
@@ -906,7 +906,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
             </div>
             <figure class="custom-figure">
               <img src="/img/chatgpt-new-app.png" alt="Форма New App в ChatGPT" loading="lazy" />
-              <figcaption>Образец — форма из ChatGPT.</figcaption>
+              <figcaption>Например — форма из ChatGPT.</figcaption>
             </figure>
           </div>
         </div>
@@ -914,7 +914,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
     </div>
 
     <p class="agent-hint">
-      🤖 <strong>AI-агент?</strong> Открой <a href="/install.md">/install.md</a> — те же инструкции в Markdown под себя. Или скажи своему агенту: «open https://vas3k-mcp.rmbk.me/install.md and install it for me».
+      🤖 <strong>AI-агент?</strong> Открой <a href="/install.md">/install.md</a> — те же инструкции в Markdown, для агента. Или скажи своему агенту: «open https://vas3k-mcp.rmbk.me/install.md and install it for me».
     </p>
   </section>
 
@@ -922,7 +922,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
     <h2>Что умеет 🛠</h2>
 
     <h3 class="tool-group-title">Только чтение — 12 инструментов <span class="tool-group-badge">/mcp</span></h3>
-    <p class="tool-group-desc">Доступны на обоих эндпоинтах. Ничего не меняют в Клубе.</p>
+    <p class="tool-group-desc">Доступны на обоих URL. Ничего не меняют в Клубе.</p>
     <div class="tools">
       <div class="tool"><span class="tool-emoji" aria-hidden="true">👤</span><span class="tool-name">get_me</span><span class="tool-desc">Твой профиль</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🧑‍🚀</span><span class="tool-name">get_user</span><span class="tool-desc">Профиль участника по slug</span></div>
@@ -932,22 +932,22 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
       <div class="tool"><span class="tool-emoji" aria-hidden="true">📲</span><span class="tool-name">find_user_by_telegram</span><span class="tool-desc">Найти по Telegram ID</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">📝</span><span class="tool-name">get_post</span><span class="tool-desc">Пост по типу и slug</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">📄</span><span class="tool-name">get_post_markdown</span><span class="tool-desc">Markdown поста</span></div>
-      <div class="tool"><span class="tool-emoji" aria-hidden="true">💬</span><span class="tool-name">list_post_comments</span><span class="tool-desc">Комменты под постом</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">💬</span><span class="tool-name">list_post_comments</span><span class="tool-desc">Комментарии под постом</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">📰</span><span class="tool-name">get_feed</span><span class="tool-desc">Страница ленты с фильтрами</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🔍</span><span class="tool-name">search_users</span><span class="tool-desc">Поиск людей по префиксу</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🔖</span><span class="tool-name">search_tags</span><span class="tool-desc">Поиск тегов с фильтром группы</span></div>
     </div>
 
     <h3 class="tool-group-title">Действия от твоего имени — ещё 11 <span class="tool-group-badge tool-group-badge-write">/mcp-full</span></h3>
-    <p class="tool-group-desc">Только на <code class="inline">/mcp-full</code>. Лайки, закладки, подписки и т.п. — AI ставит их от твоего имени, когда ты его об этом просишь.</p>
+    <p class="tool-group-desc">Только на <code class="inline">/mcp-full</code>. Лайки, закладки, подписки и т.&nbsp;п. — AI ставит их от твоего имени, когда ты его об этом просишь.</p>
     <div class="tools">
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🔖</span><span class="tool-name">bookmark_post</span><span class="tool-desc">Добавить или убрать закладку</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">👍</span><span class="tool-name">upvote_post</span><span class="tool-desc">Лайкнуть пост</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">↩️</span><span class="tool-name">retract_post_vote</span><span class="tool-desc">Снять свой лайк с поста</span></div>
-      <div class="tool"><span class="tool-emoji" aria-hidden="true">🔔</span><span class="tool-name">toggle_post_subscription</span><span class="tool-desc">Подписка на новые комменты</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">🔔</span><span class="tool-name">toggle_post_subscription</span><span class="tool-desc">Подписка на новые комментарии</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🎟</span><span class="tool-name">toggle_event_participation</span><span class="tool-desc">Отметиться на ивенте или сняться</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">💚</span><span class="tool-name">upvote_comment</span><span class="tool-desc">Лайкнуть комментарий</span></div>
-      <div class="tool"><span class="tool-emoji" aria-hidden="true">↩️</span><span class="tool-name">retract_comment_vote</span><span class="tool-desc">Снять лайк с коммента</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">↩️</span><span class="tool-name">retract_comment_vote</span><span class="tool-desc">Снять лайк с комментария</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🫂</span><span class="tool-name">toggle_friend</span><span class="tool-desc">Отправить или отозвать запрос в друзья</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">📥</span><span class="tool-name">subscribe_room</span><span class="tool-desc">Подписаться на комнату</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🤐</span><span class="tool-name">mute_room</span><span class="tool-desc">Замьютить комнату</span></div>

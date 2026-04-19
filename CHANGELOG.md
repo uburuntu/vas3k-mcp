@@ -38,7 +38,7 @@ Public-launch polish.
 ### Added
 
 - 12 read-only MCP tools exposed on `/mcp` (feed, posts, comments, rooms, users, search — read-only surface of the vas3k.club API).
-- 11 write-capable MCP tools exposed on `/mcp-full` (upvote, bookmark, retract, subscribe/unsubscribe to posts and rooms, mute room, friend management — все требуют upstream-токен).
+- 11 write-capable MCP tools exposed on `/mcp-full` (upvote, bookmark, retract, subscribe/unsubscribe to posts and rooms, mute room, friend management — all require an upstream token).
 - Dual-OAuth bridge: MCP client OAuth flow on the worker side, vas3k.club OAuth flow on the upstream side, with upstream tokens encrypted at rest in KV via `@cloudflare/workers-oauth-provider`.
 - Russian-language landing page at `/` describing the project, both endpoints, and the full tool inventory.
 - Weekly contract-test workflow (`.github/workflows/contract.yml`) that boots the real vas3k.club Django stack (postgres + redis + Django dev server) and runs zod-schema assertions against every documented tool, so upstream API drift is caught before users see it.

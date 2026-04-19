@@ -158,7 +158,7 @@ form{margin-top:1.5rem}</style></head>
 <h1>Подключить «${escapeHtml(clientName)}» к Клубу?</h1>
 <p>Приложение запрашивает доступ к твоему профилю на <a href="https://vas3k.club">vas3k.club</a> через OAuth.</p>
 
-<div class="warn">⚠️ <strong>Имя «${escapeHtml(clientName)}» приложение указало само — никто его не проверял.</strong> Если ты сам это приложение не подключал — закрой вкладку. Проверь идентификатор и redirect URL ниже.</div>
+<div class="warn">⚠️ <strong>Имя «${escapeHtml(clientName)}» приложение указало само — никто его не проверял.</strong> Если это приложение подключал не ты — закрой вкладку. Проверь идентификатор и redirect URL ниже.</div>
 
 <div class="kv"><span class="kv-label">Client ID</span><code>${escapeHtml(clientIdentifier)}</code></div>
 <div class="kv"><span class="kv-label">Redirect URL</span><code>${escapeHtml(redirectUri)}</code></div>
