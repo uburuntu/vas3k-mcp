@@ -33,23 +33,12 @@ const SLUG_RE = /^[a-zA-Z0-9_-]{1,64}$/;
 const TELEGRAM_ID_RE = /^\d+$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function assertSlug(slug: string): void {
-  if (!SLUG_RE.test(slug)) {
-    throw new Vas3kAPIError(400, { error: "invalid slug" });
-  }
+function assertMatches(value: string, pattern: RegExp, label: string): void {
+  if (!pattern.test(value)) throw new Vas3kAPIError(400, { error: `invalid ${label}` });
 }
-
-function assertTelegramId(id: string): void {
-  if (!TELEGRAM_ID_RE.test(id)) {
-    throw new Vas3kAPIError(400, { error: "invalid telegram id" });
-  }
-}
-
-function assertUuid(id: string): void {
-  if (!UUID_RE.test(id)) {
-    throw new Vas3kAPIError(400, { error: "invalid uuid" });
-  }
-}
+const assertSlug = (slug: string) => assertMatches(slug, SLUG_RE, "slug");
+const assertTelegramId = (id: string) => assertMatches(id, TELEGRAM_ID_RE, "telegram id");
+const assertUuid = (id: string) => assertMatches(id, UUID_RE, "uuid");
 
 export class Vas3kClient {
   constructor(private readonly opts: Vas3kClientOptions) {}

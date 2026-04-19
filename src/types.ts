@@ -34,5 +34,7 @@ export interface Props {
   scope: string;
   /** MCP-side scopes granted by the user (e.g. ["read", "write"]). */
   mcpScopes: string[];
-  [key: string]: unknown; // satisfy OAuthProvider's loose typing
+  // OAuthProvider expects Record<string, unknown>; this index signature
+  // lets us keep the typed fields above while satisfying that interface.
+  [key: string]: unknown;
 }

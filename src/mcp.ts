@@ -45,7 +45,7 @@ const TAG_GROUP = z
   .describe("Profile-tag group");
 
 /** MCP annotations for read tools that hit external upstream API. Lets hosts
- * auto-allow without prompting (MCP review M2). */
+ * auto-allow without prompting. */
 const READ_ANNOTATIONS = { readOnlyHint: true, openWorldHint: true } as const;
 
 /**

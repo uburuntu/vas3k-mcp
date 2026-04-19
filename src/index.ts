@@ -103,6 +103,9 @@ export default new OAuthProvider({
   // `transport: "auto"` makes the same route serve both Streamable HTTP
   // (the current default) AND legacy SSE for the handful of pre-mid-2025
   // clients that probe SSE first. Single mount, no extra route to manage.
+  // `as never` coerces McpAgent.serve()'s handler to OAuthProvider's opaque
+  // apiHandlers value type — runtime shape is correct, the two libraries
+  // just don't share a type for it.
   apiHandlers: {
     "/mcp-full": MyMCPFull.serve("/mcp-full", {
       binding: "MCP_OBJECT_FULL",

@@ -81,6 +81,15 @@ async function verifyState(token: string, secret: string): Promise<SignedState |
   return parsed;
 }
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 const app = new Hono<{ Bindings: Env }>();
 
 app.get("/", (c) => {
@@ -106,7 +115,7 @@ app.get("/authorize", async (c) => {
   // OAuthProvider throws on bad PKCE / unsupported response_type / etc.
   // Hono would render those as 500; OAuth spec wants 400 on malformed
   // authorize requests, so wrap and surface as text/plain.
-  let oauthReqInfo: Awaited<ReturnType<typeof c.env.OAUTH_PROVIDER.parseAuthRequest>>;
+  let oauthReqInfo: AuthRequest;
   try {
     oauthReqInfo = await c.env.OAUTH_PROVIDER.parseAuthRequest(c.req.raw);
   } catch (err) {
@@ -154,7 +163,7 @@ button{font-size:1rem;padding:.7rem 1.3rem;border-radius:8px;border:0;cursor:poi
 .primary{background:#1B1B1C;color:#FCFDFF}
 @media(prefers-color-scheme:dark){.primary{background:#FCFDFF;color:#1B1B1C}}
 .secondary{background:rgba(0,0,0,.08);color:inherit}
-@media(prefers-color-scheme:dark){.secondary{background:rgba(255,255,255,.1)}}
+@media(prefers-color-scheme:dark){.secondary{background:rgba(255,255,255,.15)}}
 code{background:rgba(0,0,0,.06);padding:.1rem .3rem;border-radius:4px}
 @media(prefers-color-scheme:dark){code{background:rgba(255,255,255,.08)}}
 ul{padding-left:1.2rem}
@@ -170,9 +179,9 @@ form{margin-top:1.5rem}</style></head>
 
 <p>Что приложение сможет:</p>
 <ul>
-  <li>читать твой профиль и контакты</li>
-  <li>читать посты, комментарии и ленту, которые видишь ты</li>
-  <li>искать людей и теги</li>
+  <li>доступ к твоему профилю и контактам</li>
+  <li>посты, комментарии и ленту, которые видишь ты</li>
+  <li>поиск людей и тегов</li>
   <li>если приложение использует <code>/mcp-full</code> — ставить лайки и закладки, подписки и запросы в друзья от твоего имени</li>
 </ul>
 <p>На следующем экране Клуб формально скажет «приложение не сможет писать посты и комментарии» — это правда: создавать посты или писать комментарии через MCP нельзя. Действия выше (лайки, закладки и подписки) идут через API и в это ограничение не попадают.</p>
@@ -293,14 +302,5 @@ app.get("/callback", async (c) => {
 
   return c.redirect(redirectTo, 302);
 });
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 export { app as Vas3kHandler };

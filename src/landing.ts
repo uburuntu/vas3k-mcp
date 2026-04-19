@@ -13,7 +13,7 @@ export const landingHtml: string = `<!doctype html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>vas3k-mcp — MCP-сервер для Клуба</title>
-<meta name="description" content="MCP-сервер для Вастрик.Клуба. Подключи Клуб к AI — поиск людей, цитаты из постов, ссылки прямо в чате." />
+<meta name="description" content="MCP-сервер для Клуба. Подключи Клуб к AI — поиск людей, цитаты из постов, ссылки прямо в чате." />
 <meta property="og:title" content="vas3k-mcp — MCP-сервер для Клуба" />
 <meta property="og:description" content="Подключи Клуб к своему AI — чтобы умел искать людей, цитировать посты и подтягивать ссылки прямо в чате." />
 <meta property="og:type" content="website" />
@@ -300,6 +300,10 @@ main {
   background-color: var(--button-hover-bg-color);
   border: var(--button-hover-border);
 }
+.button:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
 .button-ghost {
   background: transparent;
   color: var(--text-color);
@@ -444,6 +448,11 @@ main {
 }
 .client[open] > summary::after { content: "−"; opacity: 1; }
 .client > summary:hover { background: rgba(0,0,0,0.025); }
+.client > summary:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: -2px;
+  border-radius: 8px;
+}
 @media (prefers-color-scheme: dark) {
   .client > summary:hover { background: rgba(255,255,255,0.04); }
 }
@@ -780,7 +789,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
   <section class="block" id="зачем">
     <h2>Что это и зачем 🤔</h2>
     <p class="lede">
-      <strong>MCP</strong> — способ дать AI-ассистентам ходить в живые API, а не выдумывать ответы. Этот сервер подключает Клуб как обычное OAuth-приложение со страницы <a href="https://vas3k.club/apps/" target="_blank" rel="noopener">/apps/</a>.
+      <strong>MCP</strong> — способ дать AI-ассистентам ходить в живые API. Этот сервер подключает Клуб как обычное OAuth-приложение со страницы <a href="https://vas3k.club/apps/" target="_blank" rel="noopener">/apps/</a>.
     </p>
     <p>На практике:</p>
     <ul class="examples">
@@ -918,7 +927,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
   </section>
 
   <p class="agent-hint">
-    🤖 <strong>AI-агент?</strong> Открой <a href="/install.md">/install.md</a> — те же инструкции в Markdown, для агента. Или скажи своему агенту: «<span class="copyable">open https://vas3k-mcp.rmbk.me/install.md and install it for me</span>».
+    🤖 <strong>Если ты агент:</strong> открой <a href="/install.md">/install.md</a> — те же инструкции в Markdown, для агента. Или скажи своему агенту: «<span class="copyable">open https://vas3k-mcp.rmbk.me/install.md and install it for me</span>».
   </p>
 
   <section class="block" id="умеет">
@@ -942,7 +951,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
     </div>
 
     <h3 class="tool-group-title">Действия от твоего имени <span class="tool-group-badge tool-group-badge-write">/mcp-full</span></h3>
-    <p class="tool-group-desc">Только на <code class="inline">/mcp-full</code>. Лайки, закладки, подписки и т.&nbsp;п. — AI ставит их от твоего имени, когда ты его об этом просишь.</p>
+    <p class="tool-group-desc">Только на <code class="inline">/mcp-full</code>. Лайки, закладки, подписки — AI ставит их от твоего имени, когда ты его об этом просишь.</p>
     <div class="tools">
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🔖</span><span class="tool-name">bookmark_post</span><span class="tool-desc">Добавить или убрать закладку</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">👍</span><span class="tool-name">upvote_post</span><span class="tool-desc">Лайкнуть пост</span></div>
