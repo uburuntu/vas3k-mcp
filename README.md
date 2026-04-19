@@ -54,23 +54,10 @@ See [Self-host on Cloudflare Workers](#self-host-on-cloudflare-workers) below.
 
 ## Tools
 
-| Tool                          | What it does                                      |
-| ----------------------------- | ------------------------------------------------- |
-| `get_me`                      | Authenticated member's profile                    |
-| `get_user(slug)`              | Profile by URL slug                               |
-| `get_user_tags(slug)`         | Topical tags on a profile                         |
-| `get_user_badges(slug)`       | Peer-awarded badges                               |
-| `get_user_achievements(slug)` | Achievements / milestones                         |
-| `find_user_by_telegram(id)`   | Reverse-lookup by Telegram id                     |
-| `get_post(post_type, slug)`   | Full post (JSON)                                  |
-| `get_post_markdown(...)`      | Raw markdown body                                 |
-| `list_post_comments(...)`     | Visible comments under a post                     |
-| `get_feed(post_type, ...)`    | Paginated feed                                    |
-| `search_users(prefix)`        | Find members by slug prefix                       |
-| `search_tags(prefix, group)`  | Search profile tags                               |
-
-`post_type`: `post` · `link` · `project` · `question` · `idea` · `event` · `battle` · `guide` · `thread` · `intro` · `gallery` · `weekly_digest` · `referral`.
-`ordering`: `activity` (default) · `new` · `top` · `top_week` · `top_month` · `top_year` · `hot`.
+The full read + write tool inventory lives on the landing page
+(<https://vas3k-mcp.rmbk.me/#умеет>) and in the agent-friendly Markdown
+guide at <https://vas3k-mcp.rmbk.me/install.md>. 12 read-only tools on
+`/mcp`, plus 11 write tools on `/mcp-full`.
 
 ## Self-host on Cloudflare Workers
 
@@ -233,20 +220,6 @@ require a human to approve the deploy. To enforce that:
    timer** so a bad merge can be cancelled before it ships.
 
 Without that rule, every qualifying push to `main` ships to prod immediately.
-
-### Cloudflare auth: API token today, OIDC preferred
-
-The deploy uses a static `CLOUDFLARE_API_TOKEN` repo secret. This works but
-is a long-lived credential — if it leaks, an attacker has standing
-`Workers:Edit` on the account until you rotate manually. Cloudflare supports
-OIDC federation with GitHub Actions, where each run mints a short-lived
-token scoped to the workflow. The OIDC entry-point on the workflow side is
-adding `id-token: write` to `permissions:` and removing the static `apiToken`
-input from the wrangler-action step. Cloudflare's general CI/CD docs at
-<https://developers.cloudflare.com/workers/ci-cd/external-cicd/github-actions/>
-cover the API-token flow used here; check the Cloudflare dashboard (My
-Profile → API Tokens) for the OIDC trust-policy UI when you're ready to
-migrate.
 
 ### Self-hosters: DCR is open, hardened by CIMD + consent UI
 

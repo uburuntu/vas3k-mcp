@@ -91,6 +91,49 @@ Third-party actions are SHA-pinned with version comments. Dependabot keeps both 
 
 `docs/runbook.md` covers token rotation, KV reset, DO migration, propsVersion bumps, deploy rollback, custom-domain DNS recovery. Read it before doing anything that affects existing sessions (rotating `COOKIE_ENCRYPTION_KEY` invalidates them all).
 
+## Versioning and releases
+
+`VERSION` (single-line semver at repo root) is the version source of truth. `package.json`'s `version` field mirrors it for npm metadata — bump both together. Bump when you ship something users can perceive; not for docs-only commits, CI tweaks, or comment fixes.
+
+`CHANGELOG.md` is **end-user-facing**, not a commit log or development diary. The audience is someone deciding whether to upgrade or self-hosters reviewing what changed.
+
+Goes in:
+
+- New features users will see, use, or call.
+- Behavioural changes users will notice (default flips, error responses, scope handling).
+- Security fixes that affect users' data or sessions (with enough context to assess impact).
+- Bug fixes for issues users actually hit.
+
+Does NOT go in:
+
+- Internal refactors, comment fixes, naming tweaks, file moves.
+- CI / lint / typecheck / test plumbing.
+- Internal docs (CLAUDE.md, runbook edits, README cleanups).
+- Mini-fixes that landed inside one working session and only matter to the implementer (a typo in a header comment, a one-line revert, a Bezier path that was wrong on first try).
+- Exploratory work that didn't ship a user-visible change.
+
+If a release section would be empty after applying these filters, don't cut a release.
+
+Release flow:
+
+1. While building, drop user-facing changes under `[Unreleased]` in `CHANGELOG.md`. Skip the entry entirely if the change isn't user-facing.
+2. Cutting a release:
+   - Move `[Unreleased]` content under a new `[X.Y.Z] - YYYY-MM-DD` heading.
+   - Bump `VERSION` and `package.json`'s `version`.
+   - Update the bottom-of-file compare links in `CHANGELOG.md`.
+   - Commit (`chore: release X.Y.Z`).
+3. Tag and push:
+   ```sh
+   git tag "v$(cat VERSION)" && git push origin "v$(cat VERSION)"
+   ```
+4. Create the GitHub release with the changelog section as the body:
+   ```sh
+   gh release create "v$(cat VERSION)" \
+     --notes "$(awk "/^## \\[$(cat VERSION)\\]/{flag=1;next}/^## \\[/{flag=0}flag" CHANGELOG.md)"
+   ```
+
+The deploy workflow does NOT gate on `VERSION` — `main` is what ships. Tagging is bookkeeping for humans, forks, and the GitHub Releases page.
+
 ## Things to avoid
 
 - Don't reference internal review artifacts (`REVIEW_*.md` are gitignored audit notes from the launch — never link them from tracked code or commit messages).

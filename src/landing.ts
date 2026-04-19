@@ -172,34 +172,49 @@ main {
   -webkit-mask-repeat: no-repeat;
           mask-repeat: no-repeat;
 
-  /* Soft yellow halo — drop-shadow follows the post-mask silhouette. */
+  /* Three CSS variables drive the transform: --tilt-x/y come from the
+     mousemove handler at the bottom of the page (so the squircle leans
+     toward the cursor, not a fixed angle); --hover-scale flips on
+     :hover/:active. Composing them with var() means the hover scale
+     respects the live tilt instead of replacing it. */
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  --hover-scale: 1;
+  transform: scale(var(--hover-scale))
+             rotateX(var(--tilt-x))
+             rotateY(var(--tilt-y));
+
   filter: drop-shadow(0 18px 32px rgba(255, 196, 85, 0.28));
-  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+  transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1),
               filter 0.45s ease;
   cursor: pointer;
   user-select: none;
   -webkit-user-drag: none;
   will-change: transform;
 }
-/* Card-like 3D tilt on hover — lifts toward the viewer + warmer shadow. */
+/* Hover: scale up and warm the shadow. The actual tilt is set live by the
+   mousemove handler, so the squircle leans toward wherever the cursor is. */
 .hero-art:hover img {
-  transform: scale(1.05) rotateX(-6deg) rotateY(8deg);
+  --hover-scale: 1.05;
   filter: drop-shadow(-12px 30px 42px rgba(255, 196, 85, 0.45));
 }
-/* "Press" feel on click — tactile recoil. */
+/* Press: tactile recoil that still respects the current cursor tilt. */
 .hero-art:active img {
-  transform: scale(0.97) rotateX(-2deg) rotateY(2deg);
+  --hover-scale: 0.97;
   transition-duration: 0.12s;
 }
-/* Easter egg: triple-click toggles .spin via the tiny script at end of body. */
+/* Easter egg: 3 clicks → 2 smooth rotations. linear timing keeps the
+   rotation rate constant (no perceptible "stop and continue" between
+   keyframes); the scale pop happens during the lead-in/outro only.
+   720° / 1.4s with the 15-85 keyframes is exactly 7.2°/% time = uniform. */
 .hero-art img.spin {
-  animation: heroSpin 0.9s cubic-bezier(0.4, 0.05, 0.2, 0.95);
+  animation: heroSpin 1.4s linear;
 }
 @keyframes heroSpin {
-  0%   { transform: scale(1)    rotate(0deg);   }
-  35%  { transform: scale(1.12) rotate(120deg); }
-  70%  { transform: scale(1.12) rotate(280deg); }
-  100% { transform: scale(1)    rotate(360deg); }
+  0%   { transform: scale(1)    rotate(0deg);    }
+  15%  { transform: scale(1.08) rotate(108deg);  }
+  85%  { transform: scale(1.08) rotate(612deg);  }
+  100% { transform: scale(1)    rotate(720deg);  }
 }
 @media (prefers-reduced-motion: reduce) {
   .hero-art img,
@@ -647,8 +662,8 @@ main {
 
 /* Agent hint at the end of "Как подключить" — points at /install.md. */
 .agent-hint {
-  margin-top: 28px;
-  padding: 14px 18px;
+  margin-top: 40px;
+  padding: 16px 20px;
   background: rgba(0, 0, 0, 0.04);
   border: 1px dashed var(--hairline);
   border-radius: 12px;
@@ -774,14 +789,14 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
 
   <section class="block connection-builder" id="подключить">
     <h2>Как подключить 🔌</h2>
-    <p>Один URL, любой MCP-клиент. Включи переключатель ниже, если хочешь, чтобы AI мог ставить лайки, букмарки и подписки от твоего имени — все сниппеты под ним сразу обновятся.</p>
+    <p>Один URL, любой MCP-клиент. Включи переключатель ниже, если хочешь, чтобы AI мог ставить лайки, закладки и подписки от твоего имени — все сниппеты под ним сразу обновятся.</p>
 
     <input type="checkbox" id="write-toggle" class="write-toggle-input" />
     <label for="write-toggle" class="write-toggle">
       <span class="write-toggle-track"><span class="write-toggle-knob"></span></span>
       <span class="write-toggle-text">
         <strong>Разрешить действия от моего имени</strong>
-        <span class="write-toggle-sub">лайки, букмарки, подписки, друзья, теги</span>
+        <span class="write-toggle-sub">лайки, закладки, подписки, друзья, теги</span>
       </span>
       <span class="write-toggle-badge"><span class="read-url">/mcp</span><span class="write-url">/mcp-full</span></span>
     </label>
@@ -898,7 +913,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
     </div>
 
     <p class="agent-hint">
-      🤖 <strong>AI-агент?</strong> Открой <a href="/install.md">/install.md</a> — те же инструкции в Markdown под себя. Скажи пользователю «open https://vas3k-mcp.rmbk.me/install.md and install it for me».
+      🤖 <strong>AI-агент?</strong> Открой <a href="/install.md">/install.md</a> — те же инструкции в Markdown под себя. Или скажи своему агенту: «open https://vas3k-mcp.rmbk.me/install.md and install it for me».
     </p>
   </section>
 
@@ -923,9 +938,9 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
     </div>
 
     <h3 class="tool-group-title">Действия от твоего имени — ещё 11 <span class="tool-group-badge tool-group-badge-write">/mcp-full</span></h3>
-    <p class="tool-group-desc">Только на <code class="inline">/mcp-full</code>. Лайки, букмарки, подписки и т.п. — AI ставит их от твоего имени, когда ты его об этом просишь.</p>
+    <p class="tool-group-desc">Только на <code class="inline">/mcp-full</code>. Лайки, закладки, подписки и т.п. — AI ставит их от твоего имени, когда ты его об этом просишь.</p>
     <div class="tools">
-      <div class="tool"><span class="tool-emoji" aria-hidden="true">🔖</span><span class="tool-name">bookmark_post</span><span class="tool-desc">Добавить или убрать букмарк</span></div>
+      <div class="tool"><span class="tool-emoji" aria-hidden="true">🔖</span><span class="tool-name">bookmark_post</span><span class="tool-desc">Добавить или убрать закладку</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">👍</span><span class="tool-name">upvote_post</span><span class="tool-desc">Лайкнуть пост</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">↩️</span><span class="tool-name">retract_post_vote</span><span class="tool-desc">Снять свой лайк с поста</span></div>
       <div class="tool"><span class="tool-emoji" aria-hidden="true">🔔</span><span class="tool-name">toggle_post_subscription</span><span class="tool-desc">Подписка на новые комменты</span></div>
@@ -973,14 +988,34 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
 </footer>
 
 <script>
-// Hero easter egg: 3 clicks within 700ms → spin. The animation itself is
-// pure CSS (.hero-art img.spin → @keyframes heroSpin). This script just
-// counts clicks and toggles the class.
+// Hero interactions. Two behaviours:
+//   1. Cursor-following 3D tilt — derives ±8° rotateX/Y from the mouse
+//      position relative to the element bounds and pushes them into CSS
+//      vars (--tilt-x / --tilt-y). The transform itself is pure CSS.
+//   2. Easter egg — 3 clicks within 700ms add the .spin class for the
+//      duration of the @keyframes heroSpin animation.
 (() => {
   const art = document.querySelector('.hero-art');
   if (!art) return;
   const img = art.querySelector('img');
   if (!img) return;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (!reducedMotion) {
+    art.addEventListener('mousemove', (e) => {
+      if (img.classList.contains('spin')) return;
+      const rect = art.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;   // 0..1
+      const y = (e.clientY - rect.top) / rect.height;   // 0..1
+      art.style.setProperty('--tilt-x', ((0.5 - y) * 16).toFixed(2) + 'deg');
+      art.style.setProperty('--tilt-y', ((x - 0.5) * 16).toFixed(2) + 'deg');
+    });
+    art.addEventListener('mouseleave', () => {
+      art.style.removeProperty('--tilt-x');
+      art.style.removeProperty('--tilt-y');
+    });
+  }
+
   let clicks = 0;
   let timer = null;
   art.addEventListener('click', () => {
