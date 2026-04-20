@@ -33,6 +33,62 @@ const SLUG_RE = /^[a-zA-Z0-9_-]{1,64}$/;
 const TELEGRAM_ID_RE = /^\d+$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/**
+ * Max characters of `content_text` we keep per item in feed responses.
+ * Upstream JSON Feed includes the full markdown body of every post — a default
+ * page (70 items × long posts) easily hits 4 MB and blows past Perplexity's
+ * tool-result limit (1.1.0 regression caught 2026-04-20). Trim to a preview;
+ * agents can call get_post for the full body.
+ *
+ * 1000 chars ≈ first paragraph — enough signal for the agent to decide
+ * whether to drill in. Per-page payload then stays around ~100 KB even on a
+ * 70-item page.
+ */
+export const FEED_PREVIEW_CHARS = 1000;
+
+/**
+ * Mutates the feed payload in place: trims each item's `content_text` to a
+ * preview AND emits three self-announcing signals so the LLM knows the
+ * content was cut and how to retrieve the full body:
+ *
+ *   1. An in-band suffix in `content_text` itself (visible to any model that
+ *      reads the field directly): `…[Truncated preview — N of M chars
+ *      shown. Full body via get_post(post_type="…", slug="…").]`
+ *   2. `_club.content_truncated: true` — boolean machine flag.
+ *   3. `_club.content_full_chars: <original>` — so the agent can decide
+ *      whether the missing tail is worth drilling in for.
+ *
+ * Untruncated items get neither the suffix nor the markers (so absence ⇒
+ * full content). Tolerant of unknown shapes — returns input unchanged if
+ * the envelope doesn't look like `{items: [...]}`.
+ */
+function trimFeedItemContent<T>(data: T): T {
+  if (!data || typeof data !== "object" || !("items" in data)) return data;
+  const items = (data as { items?: unknown[] }).items;
+  if (!Array.isArray(items)) return data;
+  for (const item of items) {
+    if (!item || typeof item !== "object") continue;
+    const ct = (item as { content_text?: unknown }).content_text;
+    if (typeof ct !== "string" || ct.length <= FEED_PREVIEW_CHARS) continue;
+
+    // Pull the per-post identifiers so the suffix is self-contained — the
+    // LLM can copy the exact get_post call without traversing the envelope.
+    const club = (item as { _club?: Record<string, unknown> })._club;
+    const postType = (club?.type as string | undefined) ?? "post";
+    const slug = (club?.slug as string | undefined) ?? "";
+    const preview = ct.slice(0, FEED_PREVIEW_CHARS).trimEnd();
+    (item as { content_text: string }).content_text =
+      `${preview}…\n\n[Truncated preview — ${FEED_PREVIEW_CHARS} of ${ct.length} chars shown. ` +
+      `Full body via get_post(post_type="${postType}", slug="${slug}").]`;
+
+    if (club && typeof club === "object") {
+      club.content_truncated = true;
+      club.content_full_chars = ct.length;
+    }
+  }
+  return data;
+}
+
 function assertMatches(value: string, pattern: RegExp, label: string): void {
   if (!pattern.test(value)) throw new Vas3kAPIError(400, { error: `invalid ${label}` });
 }
@@ -140,7 +196,7 @@ export class Vas3kClient {
     assertSlug(slug);
     return this.request<unknown>(`/${postType}/${slug}/comments.json`);
   };
-  getFeed = (params: { post_type?: string; ordering?: string; page?: number } = {}) => {
+  getFeed = async (params: { post_type?: string; ordering?: string; page?: number } = {}) => {
     const post_type = params.post_type ?? "all";
     const ordering = params.ordering ?? "activity";
     const page = params.page ?? 1;
@@ -148,7 +204,8 @@ export class Vas3kClient {
       post_type === "all" && ordering === "activity"
         ? "/feed.json"
         : `/${post_type}/${ordering}/feed.json`;
-    return this.request<unknown>(path, { params: { page } });
+    const data = await this.request<unknown>(path, { params: { page } });
+    return trimFeedItemContent(data);
   };
   searchUsers = (prefix: string) => {
     // Mirror upstream's silent-empty rule (reference/search/api.py:18-21):

@@ -82,6 +82,77 @@ describe("Vas3kClient", () => {
     expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/link/top_week/feed.json?page=1`);
   });
 
+  it("getFeed — long content_text gets in-band suffix + _club truncation markers (Perplexity 4MB-limit fix, self-announcing so the LLM can't mistake the preview for the full post)", async () => {
+    const longBody = "x".repeat(5000);
+    const shortBody = "short body";
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        items: [
+          { id: "1", title: "long", content_text: longBody, _club: { type: "post", slug: "a" } },
+          {
+            id: "2",
+            title: "short",
+            content_text: shortBody,
+            _club: { type: "question", slug: "b" },
+          },
+        ],
+      }),
+    );
+    const client = new Vas3kClient({ baseUrl: BASE });
+    const data = (await client.getFeed()) as {
+      items: Array<{
+        content_text: string;
+        _club: {
+          type: string;
+          slug: string;
+          content_truncated?: boolean;
+          content_full_chars?: number;
+        };
+      }>;
+    };
+
+    // Long item — three signals all present:
+    const long = data.items[0]!;
+    expect(long.content_text).toContain("…");
+    expect(long.content_text).toContain("Truncated preview — 1000 of 5000 chars");
+    expect(long.content_text).toContain('get_post(post_type="post", slug="a")');
+    expect(long._club.content_truncated).toBe(true);
+    expect(long._club.content_full_chars).toBe(5000);
+
+    // Short item — ABSENCE of markers means full content. Critical contract.
+    const short = data.items[1]!;
+    expect(short.content_text).toBe(shortBody);
+    expect(short._club.content_truncated).toBeUndefined();
+    expect(short._club.content_full_chars).toBeUndefined();
+  });
+
+  it("getFeed — truncation suffix uses the actual post type from _club (so e.g. a 'question' isn't told to call get_post with type='post')", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        items: [
+          {
+            id: "1",
+            title: "q",
+            content_text: "y".repeat(2000),
+            _club: { type: "question", slug: "asking-about-foo" },
+          },
+        ],
+      }),
+    );
+    const client = new Vas3kClient({ baseUrl: BASE });
+    const data = (await client.getFeed()) as { items: Array<{ content_text: string }> };
+    expect(data.items[0]!.content_text).toContain(
+      'get_post(post_type="question", slug="asking-about-foo")',
+    );
+  });
+
+  it("getFeed tolerates an items-less response shape (returns input unchanged)", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ unexpected: "shape" }));
+    const client = new Vas3kClient({ baseUrl: BASE });
+    const data = await client.getFeed();
+    expect(data).toEqual({ unexpected: "shape" });
+  });
+
   it("throws Vas3kAPIError on non-2xx", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ error: "not found" }, { status: 404 }));
     const client = new Vas3kClient({ baseUrl: BASE, accessToken: "t" });

@@ -92,6 +92,46 @@ function redactSecrets(s: string): string {
 }
 
 /**
+ * Threshold-only operational logging for tool calls.
+ *
+ * Wraps `server.registerTool` once: every subsequent registration's handler
+ * is invisibly tagged with a "did the response come back oversized or slow?"
+ * check. No log lines fire on the happy path; if a tool result crosses
+ * either threshold (size > {@link LARGE_RESULT_BYTES} or duration >
+ * {@link SLOW_TOOL_MS}) we emit a single `[tool large/slow]` warning with
+ * `name`, `ms`, `size`, `isError`. **Crucially, no user data, arguments, or
+ * response content** — just envelope shape. This is the canary that warned
+ * us about the 4 MB get_feed response (1.1.0 regression caught 2026-04-20).
+ *
+ * Why patch `registerTool` instead of touching wrap/wrapStructured: this
+ * captures the tool name automatically, in one place, without editing 23
+ * call sites.
+ */
+const LARGE_RESULT_BYTES = 250_000;
+const SLOW_TOOL_MS = 3_000;
+
+function instrumentRegisterTool(server: McpServer): void {
+  const orig = server.registerTool.bind(server);
+  // The SDK's registerTool generics are a tangle of overloads — `as any` keeps
+  // the wrapper one-line and the public type signature unchanged downstream.
+  // biome-ignore lint/suspicious/noExplicitAny: see comment above
+  server.registerTool = ((name: string, config: any, handler: any) => {
+    return orig(name, config, async (...args: unknown[]) => {
+      const start = Date.now();
+      // biome-ignore lint/suspicious/noExplicitAny: handler return shape is the SDK's own
+      const result: any = await handler(...args);
+      const ms = Date.now() - start;
+      const size = JSON.stringify(result).length;
+      if (size > LARGE_RESULT_BYTES || ms > SLOW_TOOL_MS) {
+        console.warn("[tool large/slow]", { name, ms, size, isError: !!result.isError });
+      }
+      return result;
+    });
+    // biome-ignore lint/suspicious/noExplicitAny: registerTool's public type — preserved for callers
+  }) as any;
+}
+
+/**
  * Format an exception into a CallToolResult error payload. Module-level
  * (not a method) so {@link MyMCP.wrap} stays self-contained and the unit
  * test in `test/mcp-wrap.test.ts` can exercise it with an empty `this`.
@@ -216,6 +256,8 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
   }
 
   async init() {
+    instrumentRegisterTool(this.server);
+
     // ---------------- profile / identity --------------------------------------
     this.server.registerTool(
       "get_me",
@@ -349,7 +391,7 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
       {
         title: "Feed page",
         description:
-          "One page of the public feed in JSON Feed 1.1 format. Default arguments give the global activity feed — same view a logged-in member sees on the homepage. To browse a specific topic use post_type='project' (or any other type) and ordering='top_week' / 'hot'. Pages start at 1; `next_url` in the response indicates more pages exist. Each item is a complete post entry — pass `_club.type` + `_club.slug` to get_post or list_post_comments for the full thread.",
+          "One page of the public feed in JSON Feed 1.1 format. Default arguments give the global activity feed — same view a logged-in member sees on the homepage. To browse a specific topic use post_type='project' (or any other type) and ordering='top_week' / 'hot'. Pages start at 1; `next_url` in the response indicates more pages exist. Per-item `content_text` is truncated to a preview (~1000 chars) when the post is longer; truncated items carry `_club.content_truncated:true`, `_club.content_full_chars:<N>`, AND a `[Truncated preview — N of M chars shown. Full body via get_post(post_type=\"…\", slug=\"…\").]` suffix in the text itself — so you always know when you're looking at a preview and exactly which call returns the full body.",
         inputSchema: {
           post_type: FEED_POST_TYPE,
           ordering: ORDERING.default("activity"),

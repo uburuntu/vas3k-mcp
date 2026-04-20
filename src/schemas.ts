@@ -179,6 +179,22 @@ export const postItemSchema = z.object({
       upvotes: z.number().int(),
       is_public: z.boolean(),
       is_commentable: z.boolean(),
+      // Truncation markers — added by this MCP server's post-processing on
+      // feed responses (NOT by upstream `Post.to_json_feed_entry`). Absent
+      // when content_text holds the full body.
+      content_truncated: z
+        .boolean()
+        .optional()
+        .describe(
+          "True if content_text was truncated to a preview by this MCP server. Call get_post(_club.type, _club.slug) for the full body.",
+        ),
+      content_full_chars: z
+        .number()
+        .int()
+        .optional()
+        .describe(
+          "Original character count of content_text before truncation. Absent when content_text is the full body.",
+        ),
     })
     .describe("vas3k.club extension to JSON Feed 1.1 — extra metadata not in the standard"),
 });
