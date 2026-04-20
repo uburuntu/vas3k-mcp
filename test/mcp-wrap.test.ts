@@ -143,12 +143,14 @@ describe("MyMCP.wrap", () => {
 });
 
 describe("MyMCP.wrapStructured", () => {
-  it("success → { content: [], structuredContent }", async () => {
+  it("success → structuredContent + JSON text in content (spec-recommended duplicate for compat)", async () => {
     const data = { post: { upvotes: 42 }, upvoted_timestamp: 1700000000000 };
     const r = await callWrapStructured(async () => data);
     expect(r.isError).toBeUndefined();
-    expect(r.content).toEqual([]); // SDK requires the field; we ship it empty.
     expect(r.structuredContent).toEqual(data);
+    // Perplexity (and any older client) needs the JSON text fallback —
+    // empty content was a 1.1.0/1.1.1 regression, restored in 1.1.2.
+    expect(r.content[0]?.text).toBe(JSON.stringify(data));
   });
 
   it("Vas3kAPIError → same error framing as wrap (with hint suffix)", async () => {

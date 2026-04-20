@@ -193,19 +193,21 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
   }
 
   /**
-   * Wrap a tool that has a registered `outputSchema`. Returns
-   * `structuredContent` only — every MCP client we target (Claude Desktop,
-   * ChatGPT, Cursor, Perplexity, MCP Inspector) handles the structured field
-   * natively, so the JSON-stringified text duplicate isn't worth the bytes.
-   * `content: []` is the explicit "no human-readable block" signal and
-   * satisfies the SDK's CallToolResult type. Errors still flow through the
-   * `content` array (validation skips when `isError: true`).
+   * Wrap a tool that has a registered `outputSchema`. Returns BOTH
+   * `structuredContent` (modern clients consume this directly, with type
+   * info) AND a JSON-stringified text block in `content` for compatibility.
+   *
+   * The MCP spec marks `content` as optional when `structuredContent` is
+   * provided, but it also says "a tool that returns structured content
+   * SHOULD also return the serialized JSON in a TextContent block". 1.1.0
+   * shipped without the duplicate and Perplexity surfaced it as an opaque
+   * "Error" — restored in 1.1.2 (regression fix).
    */
   protected async wrapStructured<T>(fn: () => Promise<T>) {
     try {
       const data = await fn();
       return {
-        content: [],
+        content: [{ type: "text" as const, text: JSON.stringify(data) }],
         structuredContent: data as Record<string, unknown>,
       };
     } catch (err) {

@@ -153,12 +153,13 @@ describe("MyMCP — read tools", () => {
     }
   });
 
-  it("get_me — structuredContent matches the user envelope, content stays empty", async () => {
+  it("get_me — structuredContent + JSON text fallback in content (Perplexity needs the duplicate)", async () => {
     next({ user: SAMPLE_USER });
     const r = await call("get_me");
     expect(r.isError).toBeFalsy();
     expect(r.structuredContent).toEqual({ user: SAMPLE_USER });
-    expect(r.content).toEqual([]);
+    // Spec recommends both for compat — Perplexity rejects empty content.
+    expect(text(r)).toBe(JSON.stringify({ user: SAMPLE_USER }));
     const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
     expect((init.headers as Record<string, string>).Authorization).toBe("Bearer tok");
   });
