@@ -1,6 +1,6 @@
 {
   "name": "vas3k-mcp",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "description": "Hosted remote MCP server for vas3k.club, running on Cloudflare Workers",
   "homepage": "https://github.com/uburuntu/vas3k-mcp",

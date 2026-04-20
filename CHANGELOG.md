@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-04-20
+
 ### Added
 
 - **Big copy-on-click URL on the landing page** — power-user shortcut that lives between the read/write toggle and the per-client snippets. Click anywhere on it to copy; flips between `/mcp` and `/mcp-full` together with the toggle.
@@ -69,7 +71,8 @@ Public-launch polish.
 - Dependabot configuration for `github-actions` and `npm` ecosystems with weekly schedules; minor + patch npm bumps grouped to keep review noise down.
 - Custom production domain at [vas3k-mcp.rmbk.me](https://vas3k-mcp.rmbk.me).
 
-[Unreleased]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/uburuntu/vas3k-mcp/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/uburuntu/vas3k-mcp/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/uburuntu/vas3k-mcp/releases/tag/v0.1.0
