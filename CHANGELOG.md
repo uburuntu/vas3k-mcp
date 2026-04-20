@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-04-20
+
+### Fixed
+
+- **`get_feed` response size**: previously returned the full Markdown body of every post, easily 4 MB on a default page. Perplexity (and likely other clients) treats responses that large as failed tool calls. Items now carry an ~1000-char preview of `content_text` plus three signals so the LLM knows when content was cut and how to retrieve the full body — a clear in-band `[Truncated preview — N of M chars shown. Full body via get_post(post_type="…", slug="…")]` suffix, a `_club.content_truncated:true` boolean, and `_club.content_full_chars` showing the original size.
+
+### Added
+
+- **Operational guardrail**: tool calls that produce > 250 KB results or take > 3 s now log a `[tool large/slow]` warning visible in `wrangler tail`. No user data, no arguments, no content — only `{name, ms, size, isError}` envelope shape. Prevents future regressions of the kind that broke 1.1.0.
+
 ## [1.1.2] - 2026-04-20
 
 ### Fixed
@@ -77,7 +87,8 @@ Public-launch polish.
 - Dependabot configuration for `github-actions` and `npm` ecosystems with weekly schedules; minor + patch npm bumps grouped to keep review noise down.
 - Custom production domain at [vas3k-mcp.rmbk.me](https://vas3k-mcp.rmbk.me).
 
-[Unreleased]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.2...HEAD
+[Unreleased]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.3...HEAD
+[1.1.3]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/uburuntu/vas3k-mcp/compare/v1.0.0...v1.1.0
