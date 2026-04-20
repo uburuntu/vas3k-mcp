@@ -1,19 +1,13 @@
 /**
  * Direct parse tests for the response schemas.
  *
- * These cover the schema definitions on their own — what shapes are accepted,
- * which fields are required vs optional, what happens with malformed input,
- * and (most importantly) that unknown extras are silently tolerated so a
- * forward-compatible upstream addition won't break the structured-content
- * pipeline at runtime.
- *
- * Contract tests (`test/contract`) cover the same shapes against the live
- * vas3k.club API — those catch upstream removals/renames. Together the two
- * layers form the same drift-detection net the SDK's `validateToolOutput`
- * applies in production.
+ * Covers what each *ResponseSchema accepts/rejects on its own — the SDK's
+ * `validateToolOutput` in production and the `test/contract` suite against
+ * the live API form the other two layers of the same drift-detection net.
  */
 
 import { describe, expect, it } from "vitest";
+import type { ZodType } from "zod";
 
 import {
   commentsResponseSchema,
@@ -33,364 +27,213 @@ import {
   userResponseSchema,
   userTagsResponseSchema,
 } from "../src/schemas";
+import { SAMPLE_COMMENT_UUID, SAMPLE_POST_ITEM, SAMPLE_USER } from "./fixtures";
 
-// Minimal valid User payload — the shape User.to_dict emits when called
-// without `include_private=True` (no bio/company/etc). Use a real v4 UUID:
-// zod 4's `z.uuid()` enforces version + variant nibbles strictly.
-const SAMPLE_USER = {
-  id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-  slug: "vas3k",
-  full_name: "Vas3k",
-  avatar: null,
-  upvotes: 42,
-  created_at: "2020-01-01T00:00:00Z",
-  membership_started_at: "2020-01-01T00:00:00Z",
-  membership_expires_at: "2030-01-01T00:00:00Z",
-  moderation_status: "approved",
-  payment_status: "active",
-  is_active_member: true,
-};
+const accepts = (schema: ZodType, value: unknown) =>
+  expect(schema.safeParse(value).success).toBe(true);
+const rejects = (schema: ZodType, value: unknown) =>
+  expect(schema.safeParse(value).success).toBe(false);
 
-describe("enum mirrors", () => {
-  it("TAG_GROUP_VALUES covers all six upstream Tag.GROUPS entries", () => {
-    expect(TAG_GROUP_VALUES).toHaveLength(6);
-    expect(TAG_GROUP_VALUES).toContain("club");
-    expect(TAG_GROUP_VALUES).toContain("tech");
-    expect(TAG_GROUP_VALUES).toContain("collectible");
-  });
+// ---------- enum mirrors ----------
 
-  it("POST_TYPE_VALUES covers the 12 upstream Post.TYPES entries", () => {
-    expect(POST_TYPE_VALUES).toHaveLength(12);
-    expect(POST_TYPE_VALUES).toContain("post");
-    expect(POST_TYPE_VALUES).toContain("event");
-    expect(POST_TYPE_VALUES).toContain("weekly_digest");
-  });
-
-  it("ORDERING_VALUES covers the seven feed orderings", () => {
-    expect(ORDERING_VALUES).toEqual([
-      "activity",
-      "new",
-      "top",
-      "top_week",
-      "top_month",
-      "top_year",
-      "hot",
-    ]);
-  });
+it("enum mirrors match upstream definitions", () => {
+  expect(TAG_GROUP_VALUES).toEqual(["club", "tech", "hobbies", "personal", "collectible", "other"]);
+  expect(POST_TYPE_VALUES).toHaveLength(12);
+  expect(POST_TYPE_VALUES).toContain("weekly_digest");
+  expect(ORDERING_VALUES).toEqual([
+    "activity",
+    "new",
+    "top",
+    "top_week",
+    "top_month",
+    "top_year",
+    "hot",
+  ]);
 });
+
+// ---------- userResponseSchema ----------
 
 describe("userResponseSchema", () => {
-  it("accepts the minimal User shape", () => {
-    const result = userResponseSchema.safeParse({ user: SAMPLE_USER });
-    expect(result.success).toBe(true);
-  });
-
-  it("accepts the User shape with private fields populated", () => {
-    const result = userResponseSchema.safeParse({
-      user: {
-        ...SAMPLE_USER,
-        bio: "hi",
-        company: "Acme",
-        position: "Engineer",
-        city: "Berlin",
-        country: "DE",
+  it.each([
+    ["minimal User shape", { user: SAMPLE_USER }],
+    [
+      "User with private fields populated",
+      {
+        user: {
+          ...SAMPLE_USER,
+          bio: "hi",
+          company: "Acme",
+          position: "Engineer",
+          city: "Berlin",
+          country: "DE",
+        },
       },
-    });
-    expect(result.success).toBe(true);
-  });
+    ],
+    [
+      "unknown extras at every level (forward-compat)",
+      { user: { ...SAMPLE_USER, future_field: "x" }, envelope_extra: 1 },
+    ],
+  ])("accepts %s", (_, v) => accepts(userResponseSchema, v));
 
-  it("tolerates unknown extra keys (forward-compat)", () => {
-    const result = userResponseSchema.safeParse({
-      user: { ...SAMPLE_USER, future_field: "whatever" },
-      extra_envelope_key: 123,
-    });
-    expect(result.success).toBe(true);
-  });
+  it.each([
+    ["non-UUID id", { user: { ...SAMPLE_USER, id: "11111111-1111-1111-1111-111111111111" } }],
+    [
+      "missing required field",
+      (() => {
+        const { is_active_member: _omit, ...u } = SAMPLE_USER;
+        return { user: u };
+      })(),
+    ],
+    ["wrong-typed required field", { user: { ...SAMPLE_USER, upvotes: "forty-two" } }],
+  ])("rejects %s", (_, v) => rejects(userResponseSchema, v));
 
-  it("rejects a non-UUID id (zod 4 strict version+variant check)", () => {
-    const result = userResponseSchema.safeParse({
-      user: { ...SAMPLE_USER, id: "11111111-1111-1111-1111-111111111111" },
+  it("path of UUID rejection points at user.id", () => {
+    const r = userResponseSchema.safeParse({
+      user: { ...SAMPLE_USER, id: "not-a-uuid" },
     });
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.issues[0]?.path).toEqual(["user", "id"]);
-    }
-  });
-
-  it("rejects a missing required field (drift catcher)", () => {
-    const { is_active_member: _omit, ...userWithoutActive } = SAMPLE_USER;
-    const result = userResponseSchema.safeParse({ user: userWithoutActive });
-    expect(result.success).toBe(false);
-  });
-
-  it("rejects a wrong-typed required field (drift catcher)", () => {
-    const result = userResponseSchema.safeParse({
-      user: { ...SAMPLE_USER, upvotes: "forty-two" },
-    });
-    expect(result.success).toBe(false);
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues[0]?.path).toEqual(["user", "id"]);
   });
 });
+
+// ---------- user/<slug>/tags ----------
 
 describe("userTagsResponseSchema", () => {
-  it("accepts a partial record keyed by tag group", () => {
-    const result = userTagsResponseSchema.safeParse({
-      tags: {
-        tech: [{ code: "rust", name: "Rust" }],
-        hobbies: [{ code: "climbing", name: "Climbing" }],
+  it.each([
+    ["partial record by group", { tags: { tech: [{ code: "rust", name: "Rust" }] } }],
+    ["empty tag map", { tags: {} }],
+  ])("accepts %s", (_, v) => accepts(userTagsResponseSchema, v));
+
+  it("rejects unknown tag group keys", () =>
+    rejects(userTagsResponseSchema, { tags: { not_a_real_group: [] } }));
+});
+
+// ---------- badges / achievements ----------
+
+it("userBadgesResponseSchema accepts the wrapper, optional post/comment/note", () => {
+  const badge = { code: "lol", title: "LOL", created_at: "2020" };
+  accepts(userBadgesResponseSchema, {
+    user_badges: [{ badge, from_user: SAMPLE_USER, created_at: "2020" }],
+  });
+  accepts(userBadgesResponseSchema, {
+    user_badges: [
+      {
+        badge,
+        from_user: SAMPLE_USER,
+        created_at: "2020",
+        post: { id: "p" },
+        comment: { id: "c" },
+        note: "thanks",
       },
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it("accepts an empty tag map (member with no tags)", () => {
-    const result = userTagsResponseSchema.safeParse({ tags: {} });
-    expect(result.success).toBe(true);
-  });
-
-  it("rejects an unknown tag group key", () => {
-    const result = userTagsResponseSchema.safeParse({
-      tags: { not_a_real_group: [{ code: "x", name: "X" }] },
-    });
-    expect(result.success).toBe(false);
+    ],
   });
 });
 
-describe("userBadgesResponseSchema", () => {
-  it("accepts a UserBadge wrapper", () => {
-    const result = userBadgesResponseSchema.safeParse({
-      user_badges: [
-        {
-          badge: { code: "lol", title: "LOL", created_at: "2020-01-01" },
-          from_user: SAMPLE_USER,
-          created_at: "2020-01-01",
-        },
-      ],
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it("accepts UserBadge with optional post / comment / note populated", () => {
-    const result = userBadgesResponseSchema.safeParse({
-      user_badges: [
-        {
-          badge: { code: "wow", title: "Wow", created_at: "2020-01-01" },
-          from_user: SAMPLE_USER,
-          created_at: "2020-01-01",
-          post: { id: "post-uuid" },
-          comment: { id: "comment-uuid" },
-          note: "thanks!",
-        },
-      ],
-    });
-    expect(result.success).toBe(true);
-  });
-});
-
-describe("userAchievementsResponseSchema", () => {
-  it("accepts a UserAchievement wrapper", () => {
-    const result = userAchievementsResponseSchema.safeParse({
-      user_achievements: [
-        {
-          achievement: { code: "anniversary_1", name: "1 Year" },
-          created_at: "2021-01-01",
-        },
-      ],
-    });
-    expect(result.success).toBe(true);
-  });
-});
+it("userAchievementsResponseSchema accepts the wrapper", () =>
+  accepts(userAchievementsResponseSchema, {
+    user_achievements: [{ achievement: { code: "anniv_1", name: "1 Year" }, created_at: "2021" }],
+  }));
 
 // ---------- posts ----------
 
-const SAMPLE_POST_ITEM = {
-  id: "https://example.invalid/post/hello/",
-  url: "https://example.invalid/post/hello/",
-  title: "Hello",
-  content_text: "body",
-  date_published: "2026-04-19T00:00:00Z",
-  date_modified: null,
-  authors: [{ name: "Vas3k", url: "https://example.invalid/user/vas3k/", avatar: null }],
-  _club: {
-    type: "post",
-    slug: "hello",
-    comment_count: 0,
-    view_count: 1,
-    upvotes: 0,
-    is_public: true,
-    is_commentable: true,
-  },
-};
-
 describe("postResponseSchema", () => {
-  it("accepts a JSON Feed entry with the _club extension", () => {
-    const result = postResponseSchema.safeParse({ post: SAMPLE_POST_ITEM });
-    expect(result.success).toBe(true);
-  });
+  it("accepts a JSON Feed entry with the _club extension", () =>
+    accepts(postResponseSchema, { post: SAMPLE_POST_ITEM }));
 
-  it("accepts a private post (content_text = '🔒')", () => {
-    const result = postResponseSchema.safeParse({
+  it("accepts a private post (content_text = 🔒)", () =>
+    accepts(postResponseSchema, {
       post: {
         ...SAMPLE_POST_ITEM,
         content_text: "🔒",
         _club: { ...SAMPLE_POST_ITEM._club, is_public: false },
       },
-    });
-    expect(result.success).toBe(true);
-  });
+    }));
 
-  it("rejects a malformed url", () => {
-    const result = postResponseSchema.safeParse({
-      post: { ...SAMPLE_POST_ITEM, url: "not-a-url" },
-    });
-    expect(result.success).toBe(false);
-  });
+  it("rejects a malformed url", () =>
+    rejects(postResponseSchema, { post: { ...SAMPLE_POST_ITEM, url: "not-a-url" } }));
 });
 
+// ---------- comments ----------
+
 describe("commentsResponseSchema", () => {
-  it("accepts a list of Comments with their authors", () => {
-    const result = commentsResponseSchema.safeParse({
+  it("accepts a list of Comments with their authors", () =>
+    accepts(commentsResponseSchema, {
       comments: [
         {
-          id: "8e3a73b9-31fc-4abc-8a7e-1c3a40e5d6f2",
-          url: "https://example.invalid/post/hello/#c",
+          id: SAMPLE_COMMENT_UUID,
+          url: "https://example.invalid/c",
           text: "+1",
           author: SAMPLE_USER,
           reply_to_id: null,
           upvotes: 1,
-          created_at: "2026-04-19T00:00:00Z",
+          created_at: "2026",
         },
       ],
-    });
-    expect(result.success).toBe(true);
-  });
+    }));
 
-  it("accepts an empty comments array (post with no replies yet)", () => {
-    expect(commentsResponseSchema.safeParse({ comments: [] }).success).toBe(true);
-  });
+  it("accepts an empty comments array", () => accepts(commentsResponseSchema, { comments: [] }));
 });
 
 // ---------- feed ----------
 
 describe("feedSchema", () => {
-  it("accepts a JSON Feed 1.1 page", () => {
-    const result = feedSchema.safeParse({
-      version: "https://jsonfeed.org/version/1.1",
-      title: "vas3k.club",
-      home_page_url: "https://example.invalid/",
-      feed_url: "https://example.invalid/feed.json",
-      next_url: "https://example.invalid/feed.json?page=2",
-      items: [SAMPLE_POST_ITEM],
-    });
-    expect(result.success).toBe(true);
-  });
+  const base = {
+    version: "https://jsonfeed.org/version/1.1",
+    title: "vas3k.club",
+    home_page_url: "https://example.invalid/",
+    feed_url: "https://example.invalid/feed.json",
+    items: [SAMPLE_POST_ITEM],
+  };
 
-  it("treats next_url as optional (last page)", () => {
-    const result = feedSchema.safeParse({
-      version: "https://jsonfeed.org/version/1.1",
-      title: "vas3k.club",
-      home_page_url: "https://example.invalid/",
-      feed_url: "https://example.invalid/feed.json?page=99",
-      items: [],
-    });
-    expect(result.success).toBe(true);
-  });
+  it("accepts a JSON Feed page with next_url", () =>
+    accepts(feedSchema, { ...base, next_url: "https://example.invalid/feed.json?page=2" }));
+
+  it("treats next_url as optional (last page)", () => accepts(feedSchema, base));
 });
 
 // ---------- search ----------
 
-describe("searchUsersResponseSchema", () => {
-  it("accepts a list of {slug, full_name}", () => {
-    const result = searchUsersResponseSchema.safeParse({
-      users: [{ slug: "vas3k", full_name: "Vas3k" }],
-    });
-    expect(result.success).toBe(true);
-  });
-});
+it("searchUsersResponseSchema accepts {slug, full_name}[]", () =>
+  accepts(searchUsersResponseSchema, { users: [{ slug: "vas3k", full_name: "Vas3k" }] }));
 
 describe("searchTagsResponseSchema", () => {
-  it("accepts a Tag list with code/group/name/color", () => {
-    const result = searchTagsResponseSchema.safeParse({
+  it("accepts the canonical Tag shape", () =>
+    accepts(searchTagsResponseSchema, {
       tags: [{ code: "rust", group: "tech", name: "Rust", color: "#fa0" }],
-    });
-    expect(result.success).toBe(true);
-  });
+    }));
 
-  it("tolerates unknown extra keys per tag (looseObject)", () => {
-    const result = searchTagsResponseSchema.safeParse({
-      tags: [
-        {
-          code: "rust",
-          group: "tech",
-          name: "Rust",
-          color: "#fa0",
-          new_field: "future-flag",
-        },
-      ],
-    });
-    expect(result.success).toBe(true);
-  });
+  it("tolerates unknown extras per tag (looseObject)", () =>
+    accepts(searchTagsResponseSchema, {
+      tags: [{ code: "rust", group: "tech", name: "Rust", color: "#fa0", future_flag: "x" }],
+    }));
 });
 
 // ---------- write actions ----------
 
 describe("toggleActionResponseSchema", () => {
-  it("accepts {status: 'created'}", () => {
-    expect(toggleActionResponseSchema.safeParse({ status: "created" }).success).toBe(true);
-  });
+  it.each([["created"], ["deleted"]])("accepts status=%s", (s) =>
+    accepts(toggleActionResponseSchema, { status: s }));
+  it("rejects unknown status", () => rejects(toggleActionResponseSchema, { status: "toggled" }));
+});
 
-  it("accepts {status: 'deleted'}", () => {
-    expect(toggleActionResponseSchema.safeParse({ status: "deleted" }).success).toBe(true);
+it("postUpvoteResponseSchema accepts both timestamp=N and timestamp=0 (no-op)", () => {
+  accepts(postUpvoteResponseSchema, {
+    post: { upvotes: 7 },
+    upvoted_timestamp: 1700000000000,
   });
-
-  it("rejects an unknown status value (drift catcher)", () => {
-    expect(toggleActionResponseSchema.safeParse({ status: "toggled" }).success).toBe(false);
+  accepts(postUpvoteResponseSchema, {
+    post: { upvotes: 7 },
+    upvoted_timestamp: 0,
   });
 });
 
-describe("postUpvoteResponseSchema", () => {
-  it("accepts the upvote shape with non-zero timestamp", () => {
-    const result = postUpvoteResponseSchema.safeParse({
-      post: { upvotes: 7 },
-      upvoted_timestamp: 1700000000000,
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it("accepts upvoted_timestamp = 0 (no-op when already upvoted)", () => {
-    const result = postUpvoteResponseSchema.safeParse({
-      post: { upvotes: 7 },
-      upvoted_timestamp: 0,
-    });
-    expect(result.success).toBe(true);
-  });
+it("postRetractResponseSchema accepts success true|false", () => {
+  accepts(postRetractResponseSchema, { success: true, post: { upvotes: 6 } });
+  accepts(postRetractResponseSchema, { success: false, post: { upvotes: 6 } });
 });
 
-describe("postRetractResponseSchema", () => {
-  it("accepts {success:true, post:{upvotes}}", () => {
-    expect(
-      postRetractResponseSchema.safeParse({
-        success: true,
-        post: { upvotes: 6 },
-      }).success,
-    ).toBe(true);
-  });
-
-  it("accepts success:false (no vote to retract)", () => {
-    expect(
-      postRetractResponseSchema.safeParse({
-        success: false,
-        post: { upvotes: 6 },
-      }).success,
-    ).toBe(true);
-  });
-});
-
-describe("profileTagActionResponseSchema", () => {
-  it("accepts the toggle status plus the affected tag record", () => {
-    const result = profileTagActionResponseSchema.safeParse({
-      status: "created",
-      tag: { code: "rust", name: "Rust", color: "#fa0" },
-    });
-    expect(result.success).toBe(true);
-  });
-});
+it("profileTagActionResponseSchema accepts toggle status + tag record", () =>
+  accepts(profileTagActionResponseSchema, {
+    status: "created",
+    tag: { code: "rust", name: "Rust", color: "#fa0" },
+  }));

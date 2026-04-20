@@ -151,46 +151,291 @@ app.get("/authorize", async (c) => {
     c.env.COOKIE_ENCRYPTION_KEY,
   );
 
-  return c.html(`<!doctype html><html lang="ru"><head><meta charset="utf-8" /><title>Подтверждение доступа: ${escapeHtml(clientName)}</title>
-<style>body{font-family:-apple-system,system-ui,sans-serif;max-width:34rem;margin:3rem auto;padding:0 1.5rem;color:#1B1B1C;line-height:1.55;background:#FCFDFF}
-@media(prefers-color-scheme:dark){body{background:#282c35;color:#DDD}}
-h1{margin:0 0 .5rem}
-.warn{background:rgba(255,196,85,.18);border-left:4px solid #f7b733;padding:.7rem 1rem;border-radius:8px;margin:1rem 0;font-size:.95rem}
-.kv{background:rgba(0,0,0,.05);padding:.5rem .8rem;border-radius:8px;margin:.5rem 0;font-size:.9rem;word-break:break-all}
-@media(prefers-color-scheme:dark){.kv{background:rgba(255,255,255,.06)}}
-.kv-label{font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;opacity:.7;margin-right:.5rem}
-button{font-size:1rem;padding:.7rem 1.3rem;border-radius:8px;border:0;cursor:pointer;margin-right:.5rem;font-weight:600}
-.primary{background:#1B1B1C;color:#FCFDFF}
-@media(prefers-color-scheme:dark){.primary{background:#FCFDFF;color:#1B1B1C}}
-.secondary{background:rgba(0,0,0,.08);color:inherit}
-@media(prefers-color-scheme:dark){.secondary{background:rgba(255,255,255,.15)}}
-code{background:rgba(0,0,0,.06);padding:.1rem .3rem;border-radius:4px}
-@media(prefers-color-scheme:dark){code{background:rgba(255,255,255,.08)}}
-ul{padding-left:1.2rem}
-form{margin-top:1.5rem}</style></head>
+  // Consent screen — same design system as the landing page (Ubuntu, the
+  // .block + .button tokens, warm-amber accent). The `client_name` is
+  // attacker-controlled, so every dynamic field goes through escapeHtml.
+  return c.html(`<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Подключить «${escapeHtml(clientName)}» к Клубу?</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="32x32" />
+<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Ubuntu+Mono:wght@400;700&display=swap" />
+<style>
+:root {
+  --sans-font: "Ubuntu", Helvetica, Verdana, sans-serif;
+  --mono-font: "Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --block-border-radius: 15px;
+  --button-border-radius: 15px;
+  --accent: rgba(255, 196, 85, 0.91);
+  --accent-strong: #f7b733;
+  --accent-soft: rgba(255, 196, 85, 0.18);
+  --bg-color: #FCFDFF;
+  --text-color: #333;
+  --brighter-text-color: #000;
+  --block-bg-color: #FFF;
+  --block-shadow: 10px 15px 40px rgba(83, 91, 110, 0.11);
+  --block-border: none;
+  --link-color: #333;
+  --link-hover-color: #000;
+  --button-color: #FFF;
+  --button-bg-color: #333;
+  --button-border: solid 2px #333;
+  --button-hover-color: #333;
+  --button-hover-bg-color: #FFF;
+  --button-hover-border: solid 2px #333;
+  --muted: #6b7180;
+  --hairline: rgba(0, 0, 0, 0.08);
+  --kv-bg: rgba(0, 0, 0, 0.045);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #282c35;
+    --text-color: #DDD;
+    --brighter-text-color: #FFF;
+    --block-bg-color: #1B1B1C;
+    --block-shadow: 0 0 0 #000;
+    --block-border: solid 1px #FCFDFF;
+    --link-color: #DDD;
+    --link-hover-color: #FFF;
+    --button-color: #333;
+    --button-bg-color: #FFF;
+    --button-border: solid 2px #FFF;
+    --button-hover-color: #FFF;
+    --button-hover-bg-color: #333;
+    --button-hover-border: solid 2px #FFF;
+    --muted: #9aa0ad;
+    --hairline: rgba(255, 255, 255, 0.12);
+    --kv-bg: rgba(255, 255, 255, 0.05);
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--sans-font);
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--text-color);
+  background: var(--bg-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+@media (max-width: 800px) { body { font-size: 15px; } }
+
+main {
+  max-width: 36rem;
+  margin: 0 auto;
+  padding: 36px 20px 40px;
+}
+@media (max-width: 570px) { main { padding: 22px 14px 28px; } }
+
+a {
+  color: var(--link-color);
+  font-weight: 500;
+  transition: color 0.1s linear;
+}
+a:hover { color: var(--link-hover-color); }
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  margin: 0 0 22px;
+}
+.brand-tag {
+  display: inline-block;
+  background: var(--accent);
+  color: #333;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: transform 0.15s ease;
+}
+.brand:hover .brand-tag { transform: translateY(-1px); }
+
+.card {
+  padding: 36px;
+  background: var(--block-bg-color);
+  border: var(--block-border);
+  border-radius: var(--block-border-radius);
+  box-shadow: var(--block-shadow);
+}
+@media (max-width: 570px) { .card { padding: 24px 20px; } }
+
+h1 {
+  margin: 0 0 14px;
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--brighter-text-color);
+  word-wrap: break-word;
+}
+@media (max-width: 570px) { h1 { font-size: 22px; } }
+
+p { margin: 0 0 14px; }
+p:last-of-type { margin-bottom: 0; }
+
+.warn {
+  margin: 18px 0 22px;
+  padding: 14px 18px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-strong);
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.warn strong { color: var(--brighter-text-color); }
+
+.kv {
+  margin: 8px 0;
+  padding: 12px 16px;
+  background: var(--kv-bg);
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 12px;
+  align-items: baseline;
+}
+@media (max-width: 480px) {
+  .kv { grid-template-columns: 1fr; gap: 6px; }
+}
+.kv-label {
+  font-family: var(--sans-font);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.kv code {
+  font-family: var(--mono-font);
+  font-size: 13px;
+  color: var(--brighter-text-color);
+  background: transparent;
+  padding: 0;
+  word-break: break-all;
+}
+
+ul { margin: 8px 0 18px; padding-left: 1.3rem; }
+ul li { margin: 5px 0; }
+
+code.inline {
+  font-family: var(--mono-font);
+  font-size: 0.92em;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--accent-soft);
+  color: var(--brighter-text-color);
+}
+
+.fineprint {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+  font-size: 14px;
+  color: var(--muted);
+}
+.fineprint p { margin: 0 0 8px; }
+.fineprint p:last-child { margin-bottom: 0; }
+.fineprint a { color: var(--text-color); }
+.fineprint a:hover { color: var(--brighter-text-color); }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 26px 0 0;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none !important;
+  padding: 14px 22px;
+  border-radius: var(--button-border-radius);
+  background: var(--button-bg-color);
+  border: var(--button-border);
+  color: var(--button-color);
+  cursor: pointer;
+  line-height: 1em;
+  font-family: var(--sans-font);
+  font-weight: 500;
+  font-size: 16px;
+  transition: 0.2s ease-out;
+}
+.button:hover {
+  color: var(--button-hover-color);
+  background: var(--button-hover-bg-color);
+  border: var(--button-hover-border);
+}
+.button:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+.button-ghost {
+  background: transparent;
+  color: var(--text-color);
+  border: solid 2px var(--hairline);
+}
+.button-ghost:hover {
+  background: transparent;
+  color: var(--brighter-text-color);
+  border: solid 2px var(--text-color);
+}
+@media (max-width: 480px) {
+  .button { width: 100%; }
+}
+</style>
+</head>
 <body>
-<h1>Подключить «${escapeHtml(clientName)}» к Клубу?</h1>
-<p>Приложение запрашивает доступ к твоему профилю на <a href="https://vas3k.club">vas3k.club</a> через OAuth.</p>
+<main>
+  <a class="brand" href="/" aria-label="vas3k-mcp">
+    <span class="brand-tag">✖️ Вастрик.Клуб MCP</span>
+  </a>
 
-<div class="warn">⚠️ <strong>Имя «${escapeHtml(clientName)}» приложение указало само — никто его не проверял.</strong> Если это приложение подключал не ты — закрой вкладку. Проверь идентификатор и redirect URL ниже.</div>
+  <section class="card">
+    <h1>Подключить «${escapeHtml(clientName)}» к Клубу?</h1>
+    <p>Приложение запрашивает доступ к твоему профилю на <a href="https://vas3k.club">vas3k.club</a> через OAuth.</p>
 
-<div class="kv"><span class="kv-label">Client ID</span><code>${escapeHtml(clientIdentifier)}</code></div>
-<div class="kv"><span class="kv-label">Redirect URL</span><code>${escapeHtml(redirectUri)}</code></div>
+    <div class="warn">⚠️ <strong>Имя «${escapeHtml(clientName)}» приложение указало само — никто его не проверял.</strong> Если это приложение подключал не ты — закрой вкладку. Проверь идентификатор и redirect URL ниже.</div>
 
-<p>Что приложение сможет:</p>
-<ul>
-  <li>доступ к твоему профилю и контактам</li>
-  <li>посты, комментарии и ленту, которые видишь ты</li>
-  <li>поиск людей и тегов</li>
-  <li>если приложение использует <code>/mcp-full</code> — ставить лайки и закладки, подписки и запросы в друзья от твоего имени</li>
-</ul>
-<p>На следующем экране Клуб формально скажет «приложение не сможет писать посты и комментарии» — это правда: создавать посты или писать комментарии через MCP нельзя. Действия выше (лайки, закладки и подписки) идут через API и в это ограничение не попадают.</p>
-<p>Отозвать доступ можно в любой момент на <a href="https://vas3k.club/apps/">vas3k.club/apps/</a>.</p>
-<form method="POST" action="/authorize">
-  <input type="hidden" name="state" value="${state}" />
-  <button type="submit" class="primary">Подключить и перейти к vas3k.club</button>
-  <a href="https://vas3k.club"><button type="button" class="secondary">Отмена</button></a>
-</form></body></html>`);
+    <div class="kv"><span class="kv-label">Client ID</span><code>${escapeHtml(clientIdentifier)}</code></div>
+    <div class="kv"><span class="kv-label">Redirect URL</span><code>${escapeHtml(redirectUri)}</code></div>
+
+    <p style="margin-top: 18px;">Что приложение сможет:</p>
+    <ul>
+      <li>доступ к твоему профилю и контактам</li>
+      <li>посты, комментарии и ленту, которые видишь ты</li>
+      <li>поиск людей и тегов</li>
+      <li>если приложение использует <code class="inline">/mcp-full</code> — ставить лайки и закладки, подписки и запросы в друзья от твоего имени</li>
+    </ul>
+
+    <p>На следующем экране Клуб формально скажет «приложение не сможет писать посты и комментарии» — это правда: создавать посты или писать комментарии через MCP нельзя. Действия выше (лайки, закладки и подписки) идут через API и в это ограничение не попадают.</p>
+
+    <form method="POST" action="/authorize" class="actions">
+      <input type="hidden" name="state" value="${state}" />
+      <button type="submit" class="button">Подключить и перейти к vas3k.club</button>
+      <a href="https://vas3k.club" class="button button-ghost">Отмена</a>
+    </form>
+
+    <div class="fineprint">
+      <p>Отозвать доступ можно в любой момент на <a href="https://vas3k.club/apps/">vas3k.club/apps/</a>.</p>
+    </div>
+  </section>
+</main>
+</body>
+</html>`);
 });
 
 app.post("/authorize", async (c) => {

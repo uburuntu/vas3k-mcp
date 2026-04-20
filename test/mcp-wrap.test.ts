@@ -143,58 +143,40 @@ describe("MyMCP.wrap", () => {
 });
 
 describe("MyMCP.wrapStructured", () => {
-  it("returns { content: [], structuredContent } on success", async () => {
-    const result = await callWrapStructured(async () => ({ user: { slug: "vas3k" } }));
-
-    expect(result.isError).toBeUndefined();
-    // wrapStructured drops the JSON text duplicate — the SDK requires
-    // `content` to be present (zod default), but we ship it empty.
-    expect(result.content).toEqual([]);
-    expect(result.structuredContent).toEqual({ user: { slug: "vas3k" } });
+  it("success → { content: [], structuredContent }", async () => {
+    const data = { post: { upvotes: 42 }, upvoted_timestamp: 1700000000000 };
+    const r = await callWrapStructured(async () => data);
+    expect(r.isError).toBeUndefined();
+    expect(r.content).toEqual([]); // SDK requires the field; we ship it empty.
+    expect(r.structuredContent).toEqual(data);
   });
 
-  it("works for nested objects (the common case for outputSchema'd tools)", async () => {
-    const data = {
-      post: { upvotes: 42 },
-      upvoted_timestamp: 1700000000000,
-    };
-    const result = await callWrapStructured(async () => data);
-    expect(result.structuredContent).toEqual(data);
-  });
-
-  it("falls back to the same error format as wrap on Vas3kAPIError", async () => {
-    const result = await callWrapStructured(async () => {
+  it("Vas3kAPIError → same error framing as wrap (with hint suffix)", async () => {
+    const r = await callWrapStructured(async () => {
       throw new Vas3kAPIError(404, { error: "not found" });
     });
-
-    expect(result.isError).toBe(true);
-    expect(result.structuredContent).toBeUndefined();
-    expect(result.content[0]?.text ?? "").toContain("vas3k.club returned 404");
-    expect(result.content[0]?.text ?? "").toContain("check the slug");
+    expect(r.isError).toBe(true);
+    expect(r.structuredContent).toBeUndefined();
+    expect(r.content[0]?.text ?? "").toContain("vas3k.club returned 404");
+    expect(r.content[0]?.text ?? "").toContain("check the slug");
   });
 
-  it("redacts secrets in error payloads, same as wrap (defence in depth)", async () => {
-    const result = await callWrapStructured(async () => {
-      throw new Vas3kAPIError(401, {
-        error: "bad token",
-        debug: "received Bearer abc.def.ghi-secret",
-      });
+  it("scrubs bearer tokens from error payloads", async () => {
+    const r = await callWrapStructured(async () => {
+      throw new Vas3kAPIError(401, { debug: "received Bearer abc.def.ghi" });
     });
-
-    const text = result.content[0]?.text ?? "";
-    expect(text).not.toContain("abc.def.ghi-secret");
-    expect(text).toContain("[REDACTED]");
+    expect(r.content[0]?.text ?? "").not.toContain("abc.def.ghi");
+    expect(r.content[0]?.text ?? "").toContain("[REDACTED]");
   });
 
-  it("handles unexpected errors with the generic 'Unexpected error' framing", async () => {
+  it("unexpected errors → 'Unexpected error' framing", async () => {
     const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
-      const result = await callWrapStructured(async () => {
+      const r = await callWrapStructured(async () => {
         throw new TypeError("kaboom");
       });
-      expect(result.isError).toBe(true);
-      expect(result.content[0]?.text ?? "").toMatch(/Unexpected error/);
-      expect(result.content[0]?.text ?? "").toContain("kaboom");
+      expect(r.isError).toBe(true);
+      expect(r.content[0]?.text ?? "").toMatch(/Unexpected error.*kaboom/);
     } finally {
       errSpy.mockRestore();
     }

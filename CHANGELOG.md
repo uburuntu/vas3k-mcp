@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Big copy-on-click URL on the landing page** — power-user shortcut that lives between the read/write toggle and the per-client snippets. Click anywhere on it to copy; flips between `/mcp` and `/mcp-full` together with the toggle.
+
+### Changed
+
+- **Consent screen redesigned** to match the landing page (Ubuntu, card with shadow + rounded corners, warm-amber accent, the same `.button` pattern for primary + ghost actions). Same copy and security disclosures as before.
+
 ## [1.1.0] - 2026-04-20
 
 First-class MCP polish — structured outputs, accurate annotations, and an agent-friendly description rewrite.

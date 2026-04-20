@@ -613,17 +613,41 @@ main {
   .write-toggle-text { order: 3; flex-basis: 100%; }
 }
 
+/* URL hero — power-user shortcut. Big monospace URL that lives between the
+   toggle and the per-client accordions; click anywhere on it to copy. The
+   read/write swap reuses the same .read-snippet / .write-snippet classes the
+   per-client snippets use, with extra rules below to scope the swap to
+   .url-hero (which sits outside .builder). */
+.url-hero { margin: 18px 0 26px; }
+.url-hero pre { margin: 0; }
+.url-hero pre > code {
+  font-size: 22px;
+  padding: 22px 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  /* Inherits the dark background + hover outline from the global
+     pre.copyable:hover code rule below — so it already looks tappable. */
+}
+@media (max-width: 720px) {
+  .url-hero pre > code { font-size: 18px; padding: 18px 20px; }
+}
+@media (max-width: 480px) {
+  .url-hero pre > code { font-size: 14px; padding: 16px 16px; }
+}
+
 /* Default: read variants visible, write hidden. Swap on :checked. */
 .connection-builder .write-url,
 .connection-builder .write-snippet { display: none; }
 .connection-builder .read-url { display: inline; }
 .connection-builder .read-snippet { display: block; }
 .connection-builder .write-toggle-input:checked ~ .write-toggle .read-url,
+.connection-builder .write-toggle-input:checked ~ .url-hero .read-snippet,
 .connection-builder .write-toggle-input:checked ~ .builder .read-url { display: none; }
 .connection-builder .write-toggle-input:checked ~ .write-toggle .write-url,
 .connection-builder .write-toggle-input:checked ~ .builder .write-url { display: inline; }
-.connection-builder .write-toggle-input:checked ~ .builder .read-snippet { display: none; }
+.connection-builder .write-toggle-input:checked ~ .url-hero .write-snippet,
 .connection-builder .write-toggle-input:checked ~ .builder .write-snippet { display: block; }
+.connection-builder .write-toggle-input:checked ~ .builder .read-snippet { display: none; }
 
 /* Agent hint — lives OUTSIDE the "Как подключить" .block so the section
    boundary itself does the visual separation (no margin-top hacks). */
@@ -813,6 +837,11 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
       </span>
       <span class="write-toggle-badge"><span class="read-url">/mcp</span><span class="write-url">/mcp-full</span></span>
     </label>
+
+    <div class="url-hero">
+      <pre class="snippet read-snippet copyable" aria-label="MCP server URL — нажми, чтобы скопировать"><code>https://vas3k-mcp.rmbk.me/mcp</code></pre>
+      <pre class="snippet write-snippet copyable" aria-label="MCP server URL — нажми, чтобы скопировать"><code>https://vas3k-mcp.rmbk.me/mcp-full</code></pre>
+    </div>
 
     <div class="builder">
       <details class="client" open>
