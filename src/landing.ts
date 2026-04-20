@@ -957,7 +957,7 @@ footer .sep { padding: 0 12px; opacity: 0.5; }
   </section>
 
   <p class="agent-hint">
-    🤖 <strong>Если ты агент:</strong> открой <a href="/install.md">/install.md</a> — те же инструкции в Markdown, для агента. Или скажи своему агенту: «<span class="copyable">open https://vas3k-mcp.rmbk.me/install.md and install it for me</span>».
+    🤖 <strong>Если ты агент:</strong> открой <a href="/install.md">/install.md</a> — те же инструкции в Markdown. Или скажи своему агенту: «<span class="copyable">open https://vas3k-mcp.rmbk.me/install.md and install it for me</span>».
   </p>
 
   <section class="block" id="умеет">
