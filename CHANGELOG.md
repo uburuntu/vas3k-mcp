@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-04-20
+
+### Fixed
+
+- **Perplexity tool calls now work again.** 1.1.0 dropped the JSON text duplicate alongside `structuredContent` to save a few bytes; turns out Perplexity (and likely other clients still rolling out structured-content support) treats an empty `content` array as a tool failure and surfaces it as an opaque "Error". Restored the spec-recommended duplicate — modern clients keep using `structuredContent` directly, older clients get the JSON in text. MCP Inspector, Claude Desktop, and Claude Code were already fine; this is a Perplexity-only fix.
+
 ## [1.1.1] - 2026-04-20
 
 ### Added
@@ -71,7 +77,8 @@ Public-launch polish.
 - Dependabot configuration for `github-actions` and `npm` ecosystems with weekly schedules; minor + patch npm bumps grouped to keep review noise down.
 - Custom production domain at [vas3k-mcp.rmbk.me](https://vas3k-mcp.rmbk.me).
 
-[Unreleased]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/uburuntu/vas3k-mcp/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/uburuntu/vas3k-mcp/compare/v0.1.0...v1.0.0
