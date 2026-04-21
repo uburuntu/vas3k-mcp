@@ -52,7 +52,7 @@ jobs:
 
       - name: Open issue on failure
         if: steps.probe.outputs.ok == 'false'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           # Pass via env so backticks / ${...} in the probe body can't break
           # out of the script's template literals (security review MED-1).
@@ -99,7 +99,7 @@ jobs:
 
       - name: Close existing uptime issues on recovery
         if: steps.probe.outputs.ok == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const { repo, owner } = context.repo;
