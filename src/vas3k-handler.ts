@@ -396,6 +396,52 @@ code.inline {
 @media (max-width: 480px) {
   .button { width: 100%; }
 }
+
+.warn details {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--accent-strong);
+}
+.warn summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--brighter-text-color);
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.warn summary::-webkit-details-marker { display: none; }
+.warn summary::before {
+  content: "▸";
+  display: inline-block;
+  font-size: 11px;
+  transition: transform 0.15s ease;
+}
+.warn details[open] summary::before { transform: rotate(90deg); }
+.warn details > p { margin: 10px 0 0; }
+
+.ethics-check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 22px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-color);
+  cursor: pointer;
+}
+.ethics-check input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--accent-strong);
+  cursor: pointer;
+}
+.ethics-check span { user-select: none; }
 </style>
 </head>
 <body>
@@ -410,6 +456,13 @@ code.inline {
 
     <div class="warn">⚠️ <strong>Имя «${escapeHtml(clientName)}» приложение указало само — никто его не проверял.</strong> Если это приложение подключал не ты — закрой вкладку. Проверь идентификатор и redirect URL ниже.</div>
 
+    <div class="warn">🧠 <strong>Подумай о приватности участников Клуба.</strong> Контент, который AI-приложение прочитает через MCP — это посты и комментарии других людей, иногда из закрытых разделов. Если твой AI обучается на твоих сообщениях, всё это может попасть в обучение модели и теоретически попасть в чужие руки.
+      <details>
+        <summary>Где это проверить</summary>
+        <p>Открой настройки приватности своего AI-приложения и поищи раздел про обучение модели на твоих данных. В каждом приложении называется по-разному — но если такая опция вообще есть, лучше её отключить перед подключением. Если опции нет и ты не платишь за услуги — это, скорее всего, признак, что данные используются для обучения по умолчанию.</p>
+      </details>
+    </div>
+
     <div class="kv"><span class="kv-label">Client ID</span><code>${escapeHtml(clientIdentifier)}</code></div>
     <div class="kv"><span class="kv-label">Redirect URL</span><code>${escapeHtml(redirectUri)}</code></div>
 
@@ -423,10 +476,16 @@ code.inline {
 
     <p>На следующем экране Клуб формально скажет «приложение не сможет писать посты и комментарии» — это правда: создавать посты или писать комментарии через MCP нельзя. Действия выше (лайки, закладки и подписки) идут через API и в это ограничение не попадают.</p>
 
-    <form method="POST" action="/authorize" class="actions">
+    <form method="POST" action="/authorize">
       <input type="hidden" name="state" value="${state}" />
-      <button type="submit" class="button">Подключить и перейти к vas3k.club</button>
-      <a href="https://vas3k.club" class="button button-ghost">Отмена</a>
+      <label class="ethics-check">
+        <input type="checkbox" name="ai_consent" required />
+        <span>Я понимаю риск и проверил(а) настройки приватности своего AI-приложения.</span>
+      </label>
+      <div class="actions">
+        <button type="submit" class="button">Подключить и перейти к vas3k.club</button>
+        <a href="https://vas3k.club" class="button button-ghost">Отмена</a>
+      </div>
     </form>
 
     <div class="fineprint">

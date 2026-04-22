@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Privacy disclosure about AI training on the consent screen** — a second warning block reminds you that the connected AI app reads other Club members' posts and comments, including from closed sections, and that AI apps which train on user inputs can leak that content into the model. A required checkbox confirms you've reviewed your AI app's privacy settings before the form can be submitted. The same disclosure is mirrored as a new "А что с обучением AI?" subsection in the landing page's "Приватность" block.
+
 ## [1.1.3] - 2026-04-20
 
 ### Fixed
