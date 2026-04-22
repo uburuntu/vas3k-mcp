@@ -114,11 +114,9 @@ function instrumentRegisterTool(server: McpServer): void {
   const orig = server.registerTool.bind(server);
   // The SDK's registerTool generics are a tangle of overloads — `as any` keeps
   // the wrapper one-line and the public type signature unchanged downstream.
-  // biome-ignore lint/suspicious/noExplicitAny: see comment above
   server.registerTool = ((name: string, config: any, handler: any) => {
     return orig(name, config, async (...args: unknown[]) => {
       const start = Date.now();
-      // biome-ignore lint/suspicious/noExplicitAny: handler return shape is the SDK's own
       const result: any = await handler(...args);
       const ms = Date.now() - start;
       const size = JSON.stringify(result).length;
@@ -127,7 +125,6 @@ function instrumentRegisterTool(server: McpServer): void {
       }
       return result;
     });
-    // biome-ignore lint/suspicious/noExplicitAny: registerTool's public type — preserved for callers
   }) as any;
 }
 

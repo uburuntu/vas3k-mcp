@@ -262,7 +262,6 @@ describe("Vas3kClient", () => {
     ] as const)("%s POSTs to /%s with ?is_ajax=1", async (method, path, slug) => {
       fetchMock.mockResolvedValueOnce(jsonResponse({ status: "created" }));
       const client = new Vas3kClient({ baseUrl: BASE, accessToken: "t" });
-      // biome-ignore lint/suspicious/noExplicitAny: dynamic dispatch over the client's typed methods
       await (client[method as keyof Vas3kClient] as any)(slug);
 
       const [url, init] = fetchMock.mock.calls[0]!;
@@ -282,7 +281,6 @@ describe("Vas3kClient", () => {
         jsonResponse({ comment: { upvotes: 1 }, upvoted_timestamp: 0 }),
       );
       const client = new Vas3kClient({ baseUrl: BASE, accessToken: "t" });
-      // biome-ignore lint/suspicious/noExplicitAny: dynamic dispatch
       await (client[method as keyof Vas3kClient] as any)(VALID_UUID);
 
       const [url, init] = fetchMock.mock.calls[0]!;
