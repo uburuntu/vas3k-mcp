@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.4] - 2026-04-22
+
 ### Added
 
 - **Privacy disclosure about AI training on the consent screen** — a second warning block reminds you that the connected AI app reads other Club members' posts and comments, including from closed sections, and that AI apps which train on user inputs can leak that content into the model. A required checkbox confirms you've reviewed your AI app's privacy settings before the form can be submitted. The same disclosure is mirrored as a new "А что с обучением AI?" subsection in the landing page's "Приватность" block.
@@ -91,7 +93,8 @@ Public-launch polish.
 - Dependabot configuration for `github-actions` and `npm` ecosystems with weekly schedules; minor + patch npm bumps grouped to keep review noise down.
 - Custom production domain at [vas3k-mcp.rmbk.me](https://vas3k-mcp.rmbk.me).
 
-[Unreleased]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.3...HEAD
+[Unreleased]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.4...HEAD
+[1.1.4]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.3...v1.1.4
 [1.1.3]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/uburuntu/vas3k-mcp/compare/v1.1.0...v1.1.1
